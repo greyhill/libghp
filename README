@@ -1,0 +1,27 @@
+About
+=============================
+libghp is a collection of libraries for developing multimedia
+applications in C++.  This is very well-trodden ground.  Our objective
+is to produce a really _slick_ library in the tradition of Boost and the
+STL.
+
+Required Libraries
+=============================
+
+GL, GLU, GLEW
+SDL
+Boost
+
+n.b. if you're not using the default Makefiles, be sure to mimic them as
+much as possible.  In particular, be sure that your compiler is set to 
+
+Coding Style
+=============================
+- 2 space tabs
+- C++-style casts
+- lowercase_with_underscores.  Think STL.
+- Class members suffixed with underscore_
+- RAII is king!  Throw exceptions from constructors on failure to init.
+
+Just look at the rest of the code and try to imitate it :-)
+
