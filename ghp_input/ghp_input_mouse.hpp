@@ -3,42 +3,42 @@
 
 #include <boost/utility.hpp>
 #include <boost/signals.hpp>
+#include "ghp_input_filter.hpp"
+#include "ghp_math.hpp"
 
 namespace ghp {
 namespace input {
 
+enum mouse_button : uint8_t {
+  LEFT = 0,
+  RIGHT = 1,
+  MIDDLE = 2
+};
+#define GHP_INPUT_MOUSE_BUTTONS 3
+ 
 class mouse : boost::noncopyable {
 public:
-  static mouse& create();
-  static mouse& get();
-  static bool is_created();
-  static void destroy();
-
-  enum button {
-    left,
-    right,
-    middle
-  };
-
-  class move_event {
-  };
-  typedef void (*move_cb)(const move_event&);
-
-  class button_event {
-  };
-  typedef void (*button_cb)(const button_event&);
-
   ~mouse();
 
-  mouse& set_grab(bool b);
-  bool set_grab() const;
+  bool is_button_pressed_now(mouse_button b) const;
+  bool is_button_released_now(mouse_button b) const;
+  bool is_button_down_now(mouse_button b) const;
+  bool is_moved_now() const;
 
-  mouse& bind_move(move_cb &c);
-  mouse& bind_press(button b, button_cb &c);
-  mouse& bind_release(button b, button_cb &c);
+  const filter& button_pressed(mouse_button b) const;
+  const filter& button_released(mouse_button b) const;
+  const filter& button_down(mouse_button b) const;
+  const filter& button_up(mouse_button b) const;
+  const filter& moved() const;
 
 private:
   mouse();
+
+  mutable filter *pressed_[GHP_INPUT_MOUSE_BUTTONS];
+  mutable filter *released_[GHP_INPUT_MOUSE_BUTTONS];
+  mutable filter *button_down_[GHP_INPUT_MOUSE_BUTTONS];
+  mutable filter *button_up_[GHP_INPUT_MOUSE_BUTTONS];
+  mutable filter *moved_;
 };
 
 }}

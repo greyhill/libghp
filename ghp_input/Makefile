@@ -1,8 +1,10 @@
 CXX = g++
 CXXFLAGS = -g3 -Wall -fPIC -O2 \
-	-std=c++0x
+	-std=c++0x \
+	-I ../ghp_math
 OUT = libghp_input.so
-OFILES = ghp_input_main.o
+OFILES = ghp_input_main.o \
+	ghp_input_mouse.o
 
 all: ${OUT}
 
