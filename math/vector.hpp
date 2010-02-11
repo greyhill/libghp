@@ -1,7 +1,7 @@
 #ifndef GHP_MATH_VECTOR_HPP_
 #define GHP_MATH_VECTOR_HPP_
 
-namespace ghp { namespace math {
+namespace ghp { 
 
 template<int N, typename T>
 class vector {
@@ -99,7 +99,7 @@ inline vector<4, T> vector4(const T &a, const T &b, const T &c, const T &d) {
   return v;
 }
 
-}}
+}
 
 #endif /* GHP_MATH_VECTOR_HPP_ */
 
