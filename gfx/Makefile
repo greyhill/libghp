@@ -1,5 +1,5 @@
 CXX=g++
-CXXFLAGS=-g3 -Wall -Wextra -O2 -I../
+CXXFLAGS=-g3 -Wall -Wextra -O0 -I../
 OUT=libghp_gfx.so
 OFILES= \
 	display.o \

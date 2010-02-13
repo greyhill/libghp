@@ -8,6 +8,8 @@
 
 #include <string>
 
+#include <GL/gl.h>
+
 #include <stdint.h>
 
 namespace ghp {
@@ -22,6 +24,10 @@ public:
 
   uint32_t get_width() const;
   uint32_t get_height() const;
+  GLuint get_texture_id() const;
+
+  const color<uint8_t>& operator()(uint32_t r, uint32_t c) const;
+  color<uint8_t>& operator()(uint32_t r, uint32_t c);
 
   texture& operator=(const texture &t);
 

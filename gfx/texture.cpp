@@ -26,6 +26,23 @@ public:
   }
 
   void reset(const texture &t) {
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, id_);
+    glTexImage2D(
+      GL_TEXTURE_2D,
+      0,
+      GL_RGBA,
+      t.get_width(),
+      t.get_height(),
+      0,
+      GL_RGBA,
+      GL_UNSIGNED_BYTE,
+      &t(0,0)
+    );
+  }
+
+  GLuint get_texture_id() const {
+    return id_;
   }
 
 private:
@@ -49,11 +66,11 @@ texture::texture(const std::string &path) {
     throw std::runtime_error("error loading image from file");
   width_ = surf->w;
   height_ = surf->h;
-  pixels_.reset(new color<uint8_t>[4*width_*height_]);
+  pixels_.reset(new color<uint8_t>[width_*height_]);
 }
 
 texture::texture(uint32_t width, uint32_t height, uint8_t *pixels) 
-    : pixels_(new color<uint8_t>[4*width*height]),
+    : pixels_(new color<uint8_t>[width*height]),
     width_(width),
     height_(height),
     synced_(false) {
@@ -65,7 +82,14 @@ texture::texture(uint32_t width, uint32_t height, uint8_t *pixels)
   }
 }
 
-texture::texture(const texture &t) {
+texture::texture(const texture &t) 
+    : pixels_(new color<uint8_t>[t.width_ * t.height_]), 
+    width_(t.width_),
+    height_(t.height_),
+    synced_(false),
+    gltex_(NULL) {
+  for(uint32_t i=0; i<width_*height_; ++i)
+    pixels_[i] = t.pixels_[i];
 }
 
 texture::~texture() {
@@ -79,7 +103,35 @@ uint32_t texture::get_height() const {
   return height_;
 }
 
+GLuint texture::get_texture_id() const {
+  if(gltex_ == NULL) {
+    gltex_.reset(new texture_gl(*this));
+    synced_ = true;
+    return gltex_->get_texture_id();
+  } else if(!synced_) {
+    gltex_->reset(*this);
+    synced_ = true;
+  }
+  return gltex_->get_texture_id();
+}
+
+const color<uint8_t>& texture::operator()(uint32_t r, uint32_t c) const {
+  return pixels_[r*width_ + c];
+}
+
+color<uint8_t>& texture::operator()(uint32_t r, uint32_t c) {
+  return pixels_[r*width_ + c];
+}
+
 texture& texture::operator=(const texture &t) {
+  if((width_*height_) != (t.width_ * t.height_))
+    pixels_.reset(new color<uint8_t>[t.width_ * t.height_]);
+  width_ = t.width_;
+  height_ = t.height_;
+  synced_ = false;
+  for(uint32_t i=0; i<width_*height_; ++i)
+    pixels_[i] = t.pixels_[i];
+  return *this;
 }
 
 }
