@@ -95,17 +95,11 @@ texture::texture(const std::string &path) {
   SDL_FreeSurface(surf);
 }
 
-texture::texture(uint32_t width, uint32_t height, uint8_t *pixels) 
+texture::texture(uint32_t width, uint32_t height)
     : pixels_(new color<uint8_t>[width*height]),
     width_(width),
     height_(height),
     synced_(false) {
-  for(uint32_t i=0; i<width*height; ++i) {
-    pixels_[i].red() = pixels[4*i];
-    pixels_[i].green() = pixels[4*i + 1];
-    pixels_[i].blue() = pixels[4*i + 2];
-    pixels_[i].alpha() = pixels[4*i + 3];
-  }
 }
 
 texture::texture(const texture &t) 

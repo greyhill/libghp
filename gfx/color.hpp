@@ -14,6 +14,10 @@ namespace {
   template<> inline uint8_t _color_max<uint8_t>() { return 255; }
   template<> inline float _color_min<float>() { return 0; }
   template<> inline float _color_max<float>() { return 1; }
+  // no idea why someone would want double precision color values,
+  // but there it is.
+  template<> inline double _color_min<double>() { return 0; }
+  template<> inline double _color_max<double>() { return 1; }
 }
 
 template<typename T>
