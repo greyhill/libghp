@@ -24,7 +24,6 @@ public:
 
   uint32_t get_width() const;
   uint32_t get_height() const;
-  GLuint get_texture_id() const;
 
   const color<uint8_t>& operator()(uint32_t r, uint32_t c) const;
   color<uint8_t>& operator()(uint32_t r, uint32_t c);
@@ -32,11 +31,15 @@ public:
   texture& operator=(const texture &t);
 
 private:
+  GLuint get_texture_id_() const;
+
   boost::scoped_array<color<uint8_t> > pixels_;
   uint32_t width_;
   uint32_t height_;
   mutable bool synced_;
   mutable boost::scoped_ptr<class texture_gl> gltex_;
+
+friend class renderer;
 };
 
 }

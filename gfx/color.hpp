@@ -1,6 +1,8 @@
 #ifndef _GHP_COLOR_HPP_
 #define _GHP_COLOR_HPP_
 
+#include "math.hpp"
+
 #include <stdint.h>
 
 namespace ghp {
@@ -48,6 +50,71 @@ public:
       else if(data_[i] > _color_max<T>()) 
         data_[i] = _color_max<T>();
     }
+  }
+
+  // a little bit of color arithmetic
+  color operator+(const color &c) const {
+    return color( red() + c.red(),
+      green() + c.green(),
+      blue() + c.blue(),
+      alpha() + c.alpha()
+    );
+  }
+  color operator-(const color &c) const {
+    return color( red() - c.red(),
+      green() - c.green(),
+      blue() - c.blue(),
+      alpha() - c.alpha()
+    );
+  }
+  template<typename S>
+  color operator*(const S &s) const {
+    return color(
+      red() * s,
+      blue() * s,
+      green() * s,
+      alpha() * s
+    );
+  }
+  color& operator+=(const color &c) {
+    red() += c.red();
+    blue() += c.blue();
+    green() += c.green();
+    alpha() += c.alpha();
+    return *this;
+  }
+  color& operator-=(const color &c) {
+    red() -= c.red();
+    blue() -= c.blue();
+    green() -= c.green();
+    alpha() -= c.alpha();
+    return *this;
+  }
+  template<typename S>
+  color& operator*=(const S &s) {
+    red() *= s;
+    blue() *= s;
+    green() *= s;
+    alpha() *= s;
+    return *this;
+  }
+
+  template<typename S>
+  operator const color<S>() const {
+    return color<S>(
+      linear_interpolate(_color_min<S>(), _color_max<S>(), 
+        static_cast<float>(red() - _color_min<T>()) 
+          / static_cast<float>(_color_max<T>())),
+      linear_interpolate(_color_min<S>(), _color_max<S>(), 
+        static_cast<float>(green() - _color_min<T>()) 
+          / static_cast<float>(_color_max<T>())),
+      linear_interpolate(_color_min<S>(), _color_max<S>(), 
+        static_cast<float>(blue() - _color_min<T>()) 
+          / static_cast<float>(_color_max<T>())),
+      linear_interpolate(_color_min<S>(), _color_max<S>(), 
+        static_cast<float>(alpha() - _color_min<T>()) 
+          / static_cast<float>(_color_max<T>()))
+    );
   }
 
 private:

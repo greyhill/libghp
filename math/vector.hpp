@@ -1,6 +1,8 @@
 #ifndef GHP_MATH_VECTOR_HPP_
 #define GHP_MATH_VECTOR_HPP_
 
+#include <stdint.h>
+
 namespace ghp { 
 
 template<int N, typename T>

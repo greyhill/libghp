@@ -67,6 +67,32 @@ texture::texture(const std::string &path) {
   width_ = surf->w;
   height_ = surf->h;
   pixels_.reset(new color<uint8_t>[width_*height_]);
+  const uint8_t *pixel_ptr = static_cast<const uint8_t*>(surf->pixels);
+  const uint8_t bpp = surf->format->BytesPerPixel;
+  const uint32_t red_mask = surf->format->Rmask;
+  const uint8_t red_shift = surf->format->Rshift;
+  const uint32_t green_mask = surf->format->Gmask;
+  const uint8_t green_shift = surf->format->Gshift;
+  const uint32_t blue_mask = surf->format->Bmask;
+  const uint8_t blue_shift = surf->format->Bshift;
+  const uint32_t alpha_mask = surf->format->Amask;
+  const uint8_t alpha_shift = surf->format->Ashift;
+  for(uint32_t r=0; r < width_; ++r) {
+    for(uint32_t c=0; c < height_; ++c) {
+      pixel_ptr += bpp;
+      const uint32_t *pixel_int = 
+        reinterpret_cast<const uint32_t*>(pixel_ptr);
+      pixels_[r*width_ + c].red() = 
+        static_cast<uint8_t>((*pixel_int * red_mask) >> red_shift);
+      pixels_[r*width_ + c].green() = 
+        static_cast<uint8_t>((*pixel_int * green_mask) >> green_shift);
+      pixels_[r*width_ + c].blue() = 
+        static_cast<uint8_t>((*pixel_int * blue_mask) >> blue_shift);
+      pixels_[r*width_ + c].alpha() = 
+        static_cast<uint8_t>((*pixel_int * alpha_mask) >> alpha_shift);
+    }
+  }
+  SDL_FreeSurface(surf);
 }
 
 texture::texture(uint32_t width, uint32_t height, uint8_t *pixels) 
@@ -103,7 +129,7 @@ uint32_t texture::get_height() const {
   return height_;
 }
 
-GLuint texture::get_texture_id() const {
+GLuint texture::get_texture_id_() const {
   if(gltex_ == NULL) {
     gltex_.reset(new texture_gl(*this));
     synced_ = true;
@@ -120,6 +146,7 @@ const color<uint8_t>& texture::operator()(uint32_t r, uint32_t c) const {
 }
 
 color<uint8_t>& texture::operator()(uint32_t r, uint32_t c) {
+  synced_ = false;
   return pixels_[r*width_ + c];
 }
 
