@@ -3,8 +3,7 @@ CXXFLAGS=-g3 -Wall -Wextra -O0 -I../
 OUT=libghp_gfx.so
 OFILES= \
 	display.o \
-	texture.o \
-	vertex_buffer.o
+	texture.o
 
 ${OUT}: ${OFILES}
 	${CXX} ${CXXFLAGS} -shared $^ -o $@

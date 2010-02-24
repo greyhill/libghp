@@ -1,7 +1,7 @@
 #ifndef _GHP_COLOR_HPP_
 #define _GHP_COLOR_HPP_
 
-#include "math.hpp"
+#include "../math.hpp"
 
 #include <stdint.h>
 
