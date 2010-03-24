@@ -5,69 +5,86 @@
 
 namespace ghp { 
 
+/**
+  \brief a simple mathematical vector
+  \tparam N - dimension of vector
+  \tparam T - underlying type
+ */
 template<int N, typename T>
 class vector {
 public:
+  /** create a zero vector */
   vector() {
     for(int32_t i=0; i<N; ++i) data_[i] = 0;
   }
+  /** copy constructor */
   vector(const vector &v) {
     for(int32_t i=0; i<N; ++i) data_[i] = v.data_[i];
   }
   ~vector() {
   }
 
-  T& operator()(int32_t i) {
+  inline T& operator()(int32_t i) {
     return data_[i];
   }
-  const T& operator()(int32_t i) const {
+  inline const T& operator()(int32_t i) const {
     return data_[i];
   }
-  T& get(int32_t i) {
-    return data_[i];
+  inline T& operator[](int32_t i) const {
+    return (*this)(i);
   }
-  const T& get(int32_t i) const {
-    return data_[i];
+  inline const T& operator[](int32_t i) const {
+    return (*this)(i);
   }
 
-  vector operator+(const vector &v) const {
+  inline vector operator+(const vector &v) const {
     vector v2;
     for(int32_t i=0; i<N; ++i) v2.data_[i] = data_[i] + v.data_[i];
     return v2;
   }
-  vector operator-(const vector &v) const {
+  inline vector operator-(const vector &v) const {
     vector v2;
     for(int32_t i=0; i<N; ++i) v2.data_[i] = data_[i] - v.data_[i];
     return v2;
   }
-  vector operator*(const T &t) const {
+  inline vector operator*(const T &t) const {
     vector v2;
     for(int32_t i=0; i<N; ++i) v2.data_[i] = data_[i] * t;
     return v2;
   }
-  vector operator/(const T &t) const {
+  inline vector operator/(const T &t) const {
     T recip = static_cast<T>(1)/t;
     vector v2;
     for(int32_t i=0; i<N; ++i) v2.data_[i] = data_[i] * recip;
     return v2;
   }
 
-  vector& operator+=(const vector &v) {
+  inline vector& operator+=(const vector &v) {
     for(int32_t i=0; i<N; ++i) data_[i] += v.data_[i];
     return *this;
   }
-  vector& operator-=(const vector &v) {
+  inline vector& operator-=(const vector &v) {
     for(int32_t i=0; i<N; ++i) data_[i] -= v.data_[i];
     return *this;
   }
-  vector& operator*=(const T &t) {
+  inline vector& operator*=(const T &t) {
     for(int32_t i=0; i<N; ++i) data_[i] *= t;
     return *this;
   }
-  vector& operator/=(const T &t) {
+  inline vector& operator/=(const T &t) {
     T recip = static_cast<T>(1)/t;
     for(int32_t i=0; i<N; ++i) data_[i] /= t;
     return *this;
+  }
+
+  /** conversion operator */
+  template<int M, typename S>
+  operator vector<M, S>() const {
+    vector<M, S> v;
+    for(int i=0; i<std::min(M, N); ++i) {
+      v(i) = (*this)(i);
+    }
+    return v;
   }
 
 private:
