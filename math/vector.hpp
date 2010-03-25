@@ -1,6 +1,8 @@
 #ifndef GHP_MATH_VECTOR_HPP_
 #define GHP_MATH_VECTOR_HPP_
 
+#include <iostream>
+
 #include <stdint.h>
 
 namespace ghp { 
@@ -116,6 +118,16 @@ inline vector<4, T> vector4(const T &a, const T &b, const T &c, const T &d) {
   v(2) = c;
   v(3) = d;
   return v;
+}
+
+template<int N, typename T>
+std::ostream& operator<<(std::ostream &o, const vector<N,T> &v) {
+  o << "(" << v(0);
+  for(int i=1; i<N; ++i) {
+    o << ", " << v(i);
+  }
+  o << ")";
+  return o;
 }
 
 }
