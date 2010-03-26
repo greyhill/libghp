@@ -32,7 +32,7 @@ public:
   inline const T& operator()(int32_t i) const {
     return data_[i];
   }
-  inline T& operator[](int32_t i) const {
+  inline T& operator[](int32_t i) {
     return (*this)(i);
   }
   inline const T& operator[](int32_t i) const {

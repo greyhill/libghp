@@ -140,10 +140,20 @@ private:
   boost::scoped_array<color<PIXELT> > data_;
 };
 
+/**
+  \brief directly copy source pixels to destination
+    pixels
+ */
 struct direct_copy {
-  template<typename PIXELT>
-  void operator()(const texture<PIXELT> &src, 
-      int sx, int sy, color<PIXELT> &out) {
+  /**
+    \brief perform the copying operation
+    \tparam T1 - must support texture concept
+    \tparam T2 - must support texture concept
+   */
+  template<typename T1, typename T2>
+  void operator()(const T1 &src, 
+      int sx, int sy, T2 &out) {
+    typedef typename T1::pixel_t PIXELT;
     if( (sx >= 0) && (sx < src.get_width())
         && (sy >= 0) && (sy < src.get_height()) ) {
       out = src(sx, sy);
@@ -153,12 +163,25 @@ struct direct_copy {
   }
 };
 
+/**
+  \brief copy several source pixels and perform an
+    unweighted average
+  \tparam SIZE - 2*SIZE+1 will be the dimension of the
+    square of pixels averaged 
+ */
 template<int SIZE>
 struct average_copy {
-  template<typename PIXELT>
-  void operator()(const texture<PIXELT> &src,
-      int sx, int sy, color<PIXELT> &out) {
-    color<PIXELT> pixel;
+  /**
+    \brief perform the averaging operation
+    \tparam T1 - must support texture concept
+    \tparam T2 - must support texture concept
+   */
+  template<typename T1, typename T2>
+  void operator()(const T1 &src,
+      int sx, int sy, T2 &out) {
+    typedef typename T1::pixel_t PIXELT1;
+    typedef typename T2::pixel_t PIXELT2;
+    color<PIXELT1> pixel;
     float num_pixels = 0;
     for(int y = std::max(0, sy-SIZE); 
        y <= std::min(sy+SIZE, src.get_height()-1); ++y) {
@@ -175,14 +198,16 @@ struct average_copy {
 
 /**
   \brief scale a texture from one size to another
-  \tparam PIXELT - source pixel type
-  \tparam PIXELT2 - destination pixel type
   \tparam SRCGET - pixel extractor, like direct_copy or average_copy
+  \tparam T1 - source type, must support texture concept
+  \tparam T2 - destination type, must support texture concept
  */
-template<typename PIXELT, typename PIXELT2, typename SRCGET>
-void scale_texture_long(
-    const texture<PIXELT> &src,
-    texture<PIXELT2> &dest) {
+template<typename SRCGET, typename T1, typename T2>
+inline void scale_texture(
+    const T1 &src,
+    T2 &dest) {
+  typedef typename T1::pixel_t PIXELT1;
+  typedef typename T2::pixel_t PIXELT2;
   SRCGET srcget;
   for(int dy = 0; dy < dest.get_height(); ++dy) {
     const int sy = linear_interpolate(
@@ -194,25 +219,11 @@ void scale_texture_long(
         0, src.get_width(),
         0, dest.get_width(),
         dx);
-      color<PIXELT> pixel;
+      color<PIXELT1> pixel;
       srcget(src, sx, sy, pixel);
       dest(dx, dy) = pixel;
     }
   }
-}
-
-/**
-  \brief scale a texture from one size to another
-  \tparam SRCGET - pixel extractor, like direct_copy or average_copy
-  \tparam T1 - source texture type
-  \tparam T2 - destination texture type
- */
-template<typename SRCGET, typename T1, typename T2>
-inline void scale_texture(
-    const T1 &src,
-    T2 &dest) {
-  scale_texture_long<typename T1::pixel_t, 
-    typename T2::pixel_t, SRCGET>(src, dest);
 }
 
 /**
@@ -226,6 +237,18 @@ void rotate_texture_long(
     const texture<PIXELT> &src,
     float degrees,
     texture<PIXELT2> &dest) {
+}
+
+/**
+  \brief rotate a texture
+  \tparam SRCGET - pixel extractor, like direct_copy or average_copy
+  \tparam T1 - source texture type
+  \tparam T2 - destination texture type
+ */
+template<typename SRCGET, typename T1, typename T2>
+inline void rotate_texture(const T1 &src, float degrees, T2 &dest) {
+  typedef typename T1::pixel_t PIXELT;
+  typedef typename T2::pixel_t PIXELT2;
   SRCGET srcget;
   const float rad = -degrees * M_PI/180.0;
   for(int dy=0; dy < dest.get_height(); ++dy) {
@@ -246,25 +269,12 @@ void rotate_texture_long(
 }
 
 /**
-  \brief rotate a texture
-  \tparam SRCGET - pixel extractor, like direct_copy or average_copy
-  \tparam T1 - source texture type
-  \tparam T2 - destination texture type
- */
-template<typename SRCGET, typename T1, typename T2>
-inline void rotate_texture(const T1 &src, float degrees, T2 &dest) {
-  rotate_texture_long<typename T1::pixel_t, typename T2::pixel_t, SRCGET>
-    (src, degrees, dest);
-}
-
-/**
   \brief convert an image between pixel types
   \tparam PIXELT - source pixel type
   \tparam PIXELT2 - destination pixel type
  */
-template<typename PIXELT, typename PIXELT2>
-void convert_texture(const texture<PIXELT> &src,
-    texture<PIXELT2> &dst) {
+template<typename T1, typename T2>
+void convert_texture(const T1 &src, T2 &dst) {
   dst.resize(src.get_rows(), src.get_cols());
   for(int dr=0; dr<dst.get_rows(); ++dr) {
     for(int dc=0; dc<dst.get_cols(); ++dc) {

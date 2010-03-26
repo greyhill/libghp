@@ -9,6 +9,8 @@
 #include <stdexcept>
 #include <string>
 
+#include <cassert>
+
 namespace sdl {
 
 /**
@@ -71,7 +73,7 @@ void load_texture(const std::string &path, ghp::texture<PIXELT> &dest) {
   \param src - texture to save
  */
 template<typename PIXELT>
-void write_texture(const std::string &path, const ghp::texture<PIXELT> &src) {
+void save_bmp(const std::string &path, const ghp::texture<PIXELT> &src) {
   SDL_Surface *surf = SDL_CreateRGBSurface(SDL_SWSURFACE, 
       src.get_width(), src.get_height(), 
       24,
@@ -97,6 +99,96 @@ void write_texture(const std::string &path, const ghp::texture<PIXELT> &src) {
   SDL_UnlockSurface(surf);
   SDL_FreeSurface(surf);
 }
+
+/**
+  \brief software display window from SDL
+  \tparam PIXELT - underlying pixel type
+ */
+template<typename PIXELT>
+class soft_display {
+public:
+  typedef PIXELT pixel_t;
+
+  /**
+    \brief create a new software display window.  The window
+    appears once the constructor completes, and disappears
+    when this object is destroyed.
+    \param width - window width
+    \param height - window height
+    \param fullscreen - make the window fullscreen?
+   */
+  soft_display(int32_t width, int32_t height, bool fullscreen)
+      : width_(width),
+      height_(height),
+      fullscreen_(fullscreen),
+      screen_(NULL),
+      texture_(width, height) {
+    init_();
+  }
+  ~soft_display() {
+    SDL_Quit();
+  }
+
+  /**
+    \brief set the window caption
+   */
+  inline void set_caption(const std::string &s) {
+    SDL_WM_SetCaption(s.c_str(), NULL);
+  }
+  /**
+    \brief update the window.  must be called to update the display
+   */
+  void update() {
+    // copy pixels from internal texture to SDL surface (screen memory)
+    const int num_pixels = width_ * height_;
+    uint8_t *pixels = reinterpret_cast<uint8_t*>(screen_->pixels);
+    assert(screen_->format->BytesPerPixel == 3);
+    for(int i=0; i<num_pixels; ++i) {
+      uint32_t *this_pixel = reinterpret_cast<uint32_t*>(pixels + 3*i);
+      ghp::color<ghp::RGB<uint8_t> > tmp_color = texture_(i);
+      *this_pixel = SDL_MapRGB(screen_->format,
+        tmp_color.red(), tmp_color.blue(), tmp_color.green());
+    }
+    // ...aaand update
+    SDL_Flip(screen_);
+  }
+
+  /** \brief pixel access. */
+  inline const ghp::color<PIXELT>& operator()(int x, int y) const {
+    return texture_(x, y);
+  }
+  /** \brief pixel access. */
+  inline ghp::color<PIXELT>& operator()(int x, int y) {
+    return texture_(x, y);
+  }
+  /** \brief gets the screen width */
+  inline int get_width() const {
+    return width_;
+  }
+  /** \brief sets the screen width */
+  inline int get_height() const {
+    return height_;
+  }
+
+private:
+  inline void init_() {
+    if(SDL_Init(SDL_INIT_VIDEO) == -1) {
+      throw std::runtime_error(SDL_GetError());
+    }
+    screen_ = SDL_SetVideoMode(width_, height_, 0, SDL_DOUBLEBUF |
+        (fullscreen_ ? SDL_FULLSCREEN : 0));
+    if(screen_ == NULL) {
+      throw std::runtime_error(SDL_GetError());
+    }
+  }
+
+  int32_t width_;
+  int32_t height_;
+  bool fullscreen_;
+  SDL_Surface *screen_;
+  
+  ghp::texture<PIXELT> texture_;
+};
 
 }
 

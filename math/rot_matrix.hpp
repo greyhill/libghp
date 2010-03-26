@@ -6,7 +6,10 @@
 namespace ghp {
 
 /**
-  \brief a simple rotation matrix in R^N
+  \brief a simple rotation matrix in R^N.  Users seeking 
+  a more general matrix object should check out boost::ublas
+  or something similar.  These are matrices with orthonormal
+  columns.
   \tparam N - dimension of rot_matrix
   \tparam T - underlying storage type
  */
@@ -54,20 +57,6 @@ public:
     return (*this)(i);
   }
   
-  inline rot_matrix operator+(const rot_matrix &m) const {
-    rot_matrix out;
-    for(int i=0; i<N*N; ++i) {
-      out(i) = (*this)(i) + m(i);
-    }
-    return out;
-  }
-  inline rot_matrix operator-(const rot_matrix &m) const {
-    rot_matrix out;
-    for(int i=0; i<N*N; ++i) {
-      out(i) = (*this)(i) - m(i);
-    }
-    return out;
-  }
   inline rot_matrix operator*(const rot_matrix &m) const {
     rot_matrix out;
     for(int r=0; r<N; ++r) {
@@ -92,36 +81,40 @@ public:
     }
     return out;
   }
-  inline rot_matrix operator*(const T &t) const {
-    rot_matrix m;
-    for(int i=0; i<N*N; ++i) {
-      m(i) = (*this)(i) * t;
-    }
-    return m;
+  inline rot_matrix operator/(const rot_matrix &m) const {
+    rot_matrix tmp;
+    m.invert(tmp);
+    return (*this) * tmp;
   }
   
-  inline rot_matrix& operator+=(const rot_matrix &m) {
-    for(int i=0; i<N*N; ++i) {
-      (*this)(i) += m(i);
-    }
-    return *this;
-  }
-  inline rot_matrix& operator-=(const rot_matrix &m) {
-    for(int i=0; i<N*N; ++i) {
-      (*this)(i) -= m(i);
-    }
-    return *this;
-  }
   inline rot_matrix& operator*=(const rot_matrix &m) {
     rot_matrix tmp( (*this) * m );
     *this = tmp;
     return *this;
   }
-  inline rot_matrix& operator*=(const T &t) {
-    for(int i=0; i<N*N; ++i) {
-      (*this)(i) *= t;
+  inline rot_matrix& operator/=(const rot_matrix &m) {
+    rot_matrix tmp;
+    m.invert(tmp);
+    return (*this) *= tmp;
+  }
+
+  inline rot_matrix invert() const {
+    rot_matrix out;
+    // transpose
+    for(int r=0; r<N; ++r) {
+      for(int c=0; c<N; ++c) {
+        out(r,c) = (*this)(c,r);
+      }
     }
-    return *this;
+    return out;
+  }
+  template<typename T2>
+  inline void invert(rot_matrix<N, T2> &out) const {
+    for(int r=0; r<N; ++r) {
+      for(int c=0; c<N; ++c) {
+        out(r,c) = (*this)(c,r);
+      }
+    }
   }
   
   template<typename T2, typename T3>

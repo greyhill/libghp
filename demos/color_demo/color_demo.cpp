@@ -14,11 +14,11 @@ int main(int argc, char *argv[]) {
 
   ghp::texture<ghp::RGBA<float> > xbox_icon;
   sdl::load_texture("xbox.png", xbox_icon);
-  ghp::texture<ghp::RGBA<float> > xbox_icon_rot = xbox_icon;
-  ghp::rotate_texture<ghp::direct_copy>(xbox_icon, 1, xbox_icon_rot);
-  sdl::write_texture("xbox1.bmp", xbox_icon_rot);
-  ghp::rotate_texture<ghp::direct_copy>(xbox_icon, 15, xbox_icon_rot);
-  sdl::write_texture("xbox2.bmp", xbox_icon_rot);
+  ghp::texture<ghp::RGB<uint8_t> > xbox_large(
+    xbox_icon.get_width() * 10,
+    xbox_icon.get_height() * 10);
+  ghp::scale_texture<ghp::direct_copy>(xbox_icon, xbox_large);
+  sdl::save_bmp("xbox_large.bmp", xbox_large);
 
   return 0;
 }
