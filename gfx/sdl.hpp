@@ -101,7 +101,8 @@ void save_bmp(const std::string &path, const ghp::texture<PIXELT> &src) {
 }
 
 /**
-  \brief software display window from SDL
+  \brief software display window from SDL.  The soft-display supports
+  the texture concept.
   \tparam PIXELT - underlying pixel type
  */
 template<typename PIXELT>
@@ -165,7 +166,7 @@ public:
   inline int get_width() const {
     return width_;
   }
-  /** \brief sets the screen width */
+  /** \brief gets the screen height */
   inline int get_height() const {
     return height_;
   }
@@ -188,6 +189,56 @@ private:
   SDL_Surface *screen_;
   
   ghp::texture<PIXELT> texture_;
+};
+
+/**
+  \brief an opengl-enabled screen from SDL
+ */
+class gl_display {
+public:
+  gl_display(int width, int height, bool fs)
+      : width_(width),
+      height_(height),
+      fullscreen_(fs) {
+    init_();
+  }
+  ~gl_display() {
+    SDL_Quit();
+  }
+
+  /** \brief set the window caption */
+  inline void set_caption(const std::string &s) {
+    SDL_WM_SetCaption(s.c_str(), NULL);
+  }
+  /** \brief update the window */
+  inline void update() {
+    SDL_GL_SwapBuffers();
+  }
+
+  /** \brief gets the screen width */
+  inline int get_width() const {
+    return width_;
+  }
+  /** \brief gets the screen height */
+  inline int get_height() const {
+    return height_;
+  }
+
+private:
+  inline void init_() {
+    if(SDL_Init(SDL_INIT_VIDEO) == -1) {
+      throw std::runtime_error(SDL_GetError());
+    }
+    SDL_Surface *screen_ = SDL_SetVideoMode(width_, height_, 0, 
+        SDL_DOUBLEBUF | (fullscreen_ ? SDL_FULLSCREEN : 0));
+    if(screen_ == NULL) {
+      throw std::runtime_error(SDL_GetError());
+    }
+  }
+
+  int width_;
+  int height_;
+  bool fullscreen_;
 };
 
 }

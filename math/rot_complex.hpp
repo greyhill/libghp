@@ -1,0 +1,5 @@
+#ifndef _GHP_MATH_ROT_COMPLEX_HPP_
+#define _GHP_MATH_ROT_COMPLEX_HPP_
+
+#endif
+
