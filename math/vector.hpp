@@ -3,6 +3,7 @@
 
 #include <iostream>
 
+#include <cmath>
 #include <stdint.h>
 
 namespace ghp { 
@@ -81,6 +82,13 @@ public:
 
   inline T norm2() const {
     return inner_prod(*this, *this);
+  }
+  inline vector& normalize() {
+    (*this) /= sqrtf(norm2());
+    return *this;
+  }
+  inline vector normalized() const {
+    return (*this) / sqrtf(norm2());
   }
 
   /** conversion operator */

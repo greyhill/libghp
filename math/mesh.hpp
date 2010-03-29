@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <stdexcept>
+#include <vector>
 
 #include <cassert>
 
@@ -92,11 +93,11 @@ public:
     return normals_;
   }
   /** \brief element access */
-  inline std::vector<ref_triangle<T> >& triangles() {
+  inline std::vector<ref_triangle>& triangles() {
     return triangles_;
   }
   /** \brief element access */
-  inline const std::vector<ref_triangle<T> >& triangles() const {
+  inline const std::vector<ref_triangle>& triangles() const {
     return triangles_;
   }
 
@@ -123,7 +124,7 @@ public:
     for(int i=0; i<triangles_.size(); ++i) {
       for(int j=0; j<3; ++j) {
         int idx = triangles_[i][j];
-        if( (idx < 0) || (idx >= vertices.size()) ) {
+        if( (idx < 0) || (idx >= vertices_.size()) ) {
           throw std::runtime_error("out-of-bounds face index");
         }
       }
@@ -142,7 +143,7 @@ public:
 private:
   std::vector<vector<3, T> > vertices_;
   std::vector<vector<3, T> > normals_;
-  std::vector<ref_triangle<T> > triangles_;
+  std::vector<ref_triangle> triangles_;
 };
 
 }
