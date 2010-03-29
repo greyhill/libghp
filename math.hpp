@@ -3,6 +3,7 @@
 
 #include "math/interpolate.hpp"
 #include "math/mesh.hpp"
+#include "math/mesh_util.hpp"
 #include "math/rot_complex.hpp"
 #include "math/rot_matrix.hpp"
 #include "math/rot_quat.hpp"

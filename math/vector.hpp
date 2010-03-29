@@ -79,6 +79,10 @@ public:
     return *this;
   }
 
+  inline T norm2() const {
+    return inner_prod(*this, *this);
+  }
+
   /** conversion operator */
   template<int M, typename S>
   operator vector<M, S>() const {
@@ -92,6 +96,15 @@ public:
 private:
   T data_[N];
 };
+
+template<int N, typename T>
+inline T inner_prod(const vector<N, T> &v1, const vector<N, T> &v2) {
+  T result = 0;
+  for(int i=0; i<N; ++i) {
+    result += v1(i) * v2(i);
+  }
+  return result;
+}
 
 template<typename T>
 inline vector<2, T> vector2(const T &a, const T &b) {

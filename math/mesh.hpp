@@ -3,6 +3,9 @@
 
 #include "vector.hpp"
 
+#include <iostream>
+#include <stdexcept>
+
 #include <cassert>
 
 namespace ghp {
@@ -95,6 +98,39 @@ public:
   /** \brief element access */
   inline const std::vector<ref_triangle<T> >& triangles() const {
     return triangles_;
+  }
+
+  /**
+    \brief do a sanity check on the mesh configuration to ensure
+    e.g. triangle indices are in-bounds.  throws a std::runtime_error
+    if the mesh is misconfigured.  If NDEBUG is defined, this 
+    function is a noop.
+   */
+  inline void check() {
+#ifndef NDEBUG
+    // check that there are as many normals as vertices
+    if(vertices_.size() != normals_.size()) {
+      throw std::runtime_error("unequal number of normals and vertices");
+    }
+    // check that all normals are... normal
+    for(int i=0; i<normals_.size(); ++i) {
+      T norm2 = normals_[i].norm2();
+      if(norm2 != 1) {
+        throw std::runtime_error("nonnormal normal vector");
+      }
+    }
+    // check that all face indices are in-bound
+    for(int i=0; i<triangles_.size(); ++i) {
+      for(int j=0; j<3; ++j) {
+        int idx = triangles_[i][j];
+        if( (idx < 0) || (idx >= vertices.size()) ) {
+          throw std::runtime_error("out-of-bounds face index");
+        }
+      }
+    }
+    std::cout << "mesh ok: " << normals_.size() << " vertices and "
+      << triangles_.size() << " faces." << std::endl;
+#endif
   }
 
   mesh& operator=(const mesh &m) {
