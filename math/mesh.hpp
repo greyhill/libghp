@@ -1,165 +1,73 @@
 #ifndef _GHP_MATH_MESH_HPP_
 #define _GHP_MATH_MESH_HPP_
 
-#include "vector.hpp"
-
-#include <iostream>
-#include <map>
-#include <stdexcept>
-
-#include <cassert>
+#include <vector>
 
 namespace ghp {
 
 /**
-  \brief a position and normal vector (on a mesh)
-  \tparam T - underlying floating point type
+  \brief a coherent collection of vertices, arranged into faces
+  \tparam V - has vertex concept
  */
-template<typename T>
-class vertex {
-public:
-  /** \brief create a new vertex */
-  vertex() {
-  }
-  /** \brief create a new vertex 
-    \param loc - location vector
-    \param normal - normal vector */
-  vertex(const vector<3, T> &loc, const vector<3, T> &normal)
-      : loc_(loc),
-      normal_(normal) {
-  }
-  ~vertex() {
-  }
-
-  /** \brief component access */
-  inline vector<3, T>& location() { return loc_; }
-  /** \brief component access */
-  inline const vector<3, T>& location() const { return loc_; }
-  /** \brief component access */
-  inline vector<3, T>& normal() { return normal_; }
-  /** \brief component access */
-  inline const vector<3, T>& normal() const { return normal_; }
-
-private:
-  vector<3, T> loc_;
-  vector<3, T> normal_;
-};
-
-/**
-  \brief triangular face on a mesh
-  \tparam T - underlying floating point type
-  \tparam P - parent type, supporting mesh concept
- */
-template<typename T, typename P>
-class face {
-public:
-  /** \brief create a new face */
-  face(P &p) : p_(p) { 
-    vertices_[0] = vertices_[1] = vertices_[2] = -1;
-  }
-  ~face() { }
-
-  /** \brief element access */
-  inline int& ids(int i) { return vertices_[i]; }
-  /** \brief element access */
-  inline const int& ids(int i) const { return vertices_[i]; }
-  /** \brief element access */
-  inline void set_ids(int a, int b, int c) {
-    vertices_[0] = a;
-    vertices_[1] = b;
-    vertices_[2] = c;
-  }
-  /** \brief element access */
-  inline vertex<T>& vertices(int i) { return p_.vertices(i); }
-  /** \brief element access */
-  inline const vertex<T>& vertices(int i) const { return p_.vertices(i); }
-
-private:
-  P &p_;
-  int vertices_[3];
-};
-
-/**
-  \brief a collection of 3d vertices and faces
-  \tparam T - underlying floating point type
- */
-template<typename T>
+template<typename V>
 class mesh {
 public:
-  typedef face<T, mesh<T> > face_t;
-
-  mesh() {
-  }
-  ~mesh() {
-  }
-
-  /** \brief get the underlying vertex storage object */
-  inline std::map<int, vertex<T> >& vertices() {
-    return vertices_;
-  }
-  /** \brief get the underlying vertex storage object */
-  inline const std::map<int, vertex<T> >& vertices() const {
-    return vertices_;
-  }
-  /** \brief get the underlying face storage object */
-  inline std::map<int, face_t>& faces() {
-    return faces_;
-  }
-  /** \brief get the underlying face storage object */
-  inline const std::map<int, face_t>& faces() const {
-    return faces_;
-  }
-
-  /** \brief mutable vertex access.  if the vertex does not 
-    exist, it is automatically added and returned */
-  vertex<T>& vertices(int i) {
-    typename std::map<int, vertex<T> >::iterator it = vertices_.find(i);
-    if(it == vertices_.end()) {
-      vertices_[i] = vertex<T>();
-      return vertices_[i];
-    } else {
-      return it->second;
+  /**
+    \brief a triangular face
+   */
+  class face {
+  public:
+    /** \brief create a new face */
+    inline face() {
+      indices_[0] = indices_[1] = indices_[2] = -1;
     }
-  }
-  /** \brief immutable vertex access.  attempting to access a 
-    nonexistant vertex throws a std::runtime_error */
-  const vertex<T>& vertices(int i) const {
-    typename std::map<int, vertex<T> >::const_iterator it = vertices_.find(i);
-    if(it == vertices_.end()) {
-      throw std::runtime_error("vertex does not exist");
-    } else {
-      return it->second;
+    inline ~face() {
     }
-  }
-  /** \brief mutable face access.  if the face does not exist,
-    it is automatically created and returned */
-  face_t& faces(int i) {
-    typename std::map<int, face_t>::iterator it = faces_.find(i);
-    if(it == faces_.end()) {
-      faces_[i] = face_t(*this);
-      return faces_[i];
-    } else {
-      return it->second;
-    }
-  }
-  /** \brief immutable face access.  if the face does not exist,
-    throws a std::runtime_error */
-  const face_t& faces(int i) const {
-    typename std::map<int, face_t>::const_iterator it = faces_.find(i);
-    if(it == faces_.end()) {
-      throw std::runtime_error("face does not exist");
-    } else {
-      return it->second;
-    }
-  }
 
-  void compact() {
-    // TODO implement this
-  }
+    /** \brief element access */
+    inline int& operator()(int i) { return indices_[i]; }
+    /** \brief element access */
+    inline const int& operator()(int i) const { return indices_[i]; }
+    /** \brief element access */
+    inline int& operator[](int i) { return (*this)(i); }
+    /** \brief element access */
+    inline const int& operator[](int i) const { return (*this)(i); }
+
+  private:
+    int indices_[3];
+  };
+
+  typedef V vertex_t;
+  typedef face face_t;
+
+  /** \brief create a new mesh */
+  mesh() { }
+  ~mesh() { }
+
+  /** \brief element access */
+  inline vertex_t& vertices(int i) { return vertices_[i]; }
+  /** \brief element access */
+  inline const vertex_t& vertices(int i) const { return vertices_[i]; }
+  /** \brief element access */
+  inline face_t& faces(int i) { return faces_[i]; }
+  /** \brief element access */
+  inline const face_t& faces(int i) const { return faces_[i]; }
+
+  /** \brief returns the number of vertices */
+  inline int num_vertices() const { return vertices_.size(); }
+  /** \brief returns the number of faces */
+  inline int num_faces() const { return faces_.size(); }
+  /** \brief allocates sufficient space for an arbitrary number of vertices */
+  inline void resize_vertices(int i) { vertices_.resize(i); }
+  /** \brief allocates sufficient space for an arbitrary number of faces */
+  inline void resize_faces(int i) { faces_.resize(i); }
+
+  /** \brief consolidate redundant vertices */
+  void compact() { }
 
 private:
-  std::map<int, vertex<T> > vertices_;
-  std::map<int, face_t> faces_;
+  std::vector<vertex_t> vertices_;
+  std::vector<face_t> faces_;
 };
 
 }
