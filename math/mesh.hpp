@@ -63,7 +63,8 @@ public:
   inline void resize_faces(int i) { faces_.resize(i); }
 
   /** \brief consolidate redundant vertices */
-  void compact() { }
+  void compact() {
+  }
 
 private:
   std::vector<vertex_t> vertices_;
