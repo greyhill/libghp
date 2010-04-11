@@ -174,7 +174,7 @@ void draw_line(TEX &texture, const C &color,
     const float slope = ydiff / xdiff;
     float accum = 0;
     for(int i=0; i<xdiff; ++i, accum += slope) {
-      texture(x, y) = color;
+      blit_color(color, texture(x, y));
       x += xsign;
       if(accum > 1) {
         y += ysign;
@@ -185,7 +185,7 @@ void draw_line(TEX &texture, const C &color,
     const float slope = xdiff / ydiff;
     float accum = 0;
     for(int i=0; i<ydiff; ++i, accum += slope) {
-      texture(x, y) = color;
+      blit_color(color, texture(x, y));
       y += ysign;
       if(accum > 1) {
         x += xsign;
@@ -215,7 +215,7 @@ void blit_texture(const TEX1 &src, TEX2 &dst,
       dst_v += vector2<int>(x, y);
       vector<2, int> src_v(src_p);
       src_v += vector2<int>(x, y);
-      dst(dst_v) = src(src_v);
+      blit_color(src(src_v), dst(dst_v));
     }
   }
 }

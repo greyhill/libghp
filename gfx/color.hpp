@@ -125,6 +125,72 @@ private:
   T data_[4];
 };
 
+// template-specialize this functor for more sophisticated
+// conversions, e.g. between CMY and RGB.  specializations
+// will be automatically picked up by color<>'s cast
+// operator.
+template<typename PIXELT1, typename PIXELT2>
+struct convert_color {
+  inline void operator()(const PIXELT1 &src, PIXELT2 &dest) {
+    int min_ch = std::min(
+      static_cast<int>(PIXELT1::num_channels),
+      static_cast<int>(PIXELT2::num_channels));
+    for(int i=0; i<min_ch; ++i) {
+      dest(i) = linear_interpolate(
+        color_traits<typename PIXELT2::value_t>::min_value,
+        color_traits<typename PIXELT2::value_t>::max_value,
+        color_traits<typename PIXELT1::value_t>::min_value,
+        color_traits<typename PIXELT2::value_t>::max_value,
+        src(i)
+      );
+    }
+  }
+};
+
+template<typename T1, typename T2>
+struct convert_color<RGB<T1>, RGB<T2> > {
+  inline void operator()(const RGB<T1> &src, 
+      const RGBA<T2> &dest) {
+    for(int i=0; i<3; ++i) {
+      dest(i) = linear_interpolate(
+        color_traits<T2>::min_value,
+        color_traits<T2>::max_value,
+        color_traits<T1>::min_value,
+        color_traits<T1>::max_value,
+        src(i)
+      );
+    }
+    dest(3) = color_traits<T2>::max_value;
+  }
+};
+
+// type specialize this functor to add support for 
+// proper blitting of more exotic colors.  For example,
+// a specialization is provided to ensure proper blitting
+// of alpha-valued pixels.
+template<typename P1, typename P2>
+struct blit_color_fct {
+  inline void operator()(const P1 &src, P2 &dst) {
+    dst = src;
+  }
+};
+
+template<typename T1, typename P2>
+struct blit_color_fct<RGBA<T1>, P2> {
+  inline void operator()(const RGBA<T1> &src, P2 &dst) {
+    // TODO make this not suck.
+    dst = linear_interpolate(
+      dst, P2(), static_cast<P2>(src), RGBA<T1>(), src.alpha()
+    );
+  }
+};
+
+template<typename P1, typename P2>
+inline void blit_color(const P1 &src, P2 &dst) {
+  blit_color_fct<P1, P2> fct;
+  fct(src, dst);
+}
+
 /**
   \brief convertable, generic color interface
   the color<PIXELT> class exposes concepts of color across multiple
@@ -212,30 +278,11 @@ public:
   template<typename PIXEL2>
   inline operator color<PIXEL2>() const {
     color<PIXEL2> to_return;
-    convert_color(*this, to_return);
+    convert_color<PIXELT, PIXEL2> cc;
+    cc(*this, to_return);
     return to_return;
   }
 };
-
-// template-specialize this function for more sophisticated
-// conversions, e.g. between CMY and RGB.  specializations
-// will be automatically picked up by color<>'s cast
-// operator.
-template<typename PIXELT1, typename PIXELT2>
-inline void convert_color(const color<PIXELT1> &src, color<PIXELT2> &dest) {
-  int min_ch = std::min(
-    static_cast<int>(PIXELT1::num_channels),
-    static_cast<int>(PIXELT2::num_channels));
-  for(int i=0; i<min_ch; ++i) {
-    dest(i) = linear_interpolate(
-      color_traits<typename PIXELT2::value_t>::min_value,
-      color_traits<typename PIXELT2::value_t>::max_value,
-      color_traits<typename PIXELT1::value_t>::min_value,
-      color_traits<typename PIXELT2::value_t>::max_value,
-      src(i)
-    );
-  }
-}
 
 template<typename PIXELT>
 std::ostream& operator<<(std::ostream& o, const color<PIXELT> &c) {
