@@ -1,7 +1,10 @@
 #ifndef _GHP_GFX_SDL_HPP_
 #define _GHP_GFX_SDL_HPP_
 
-#include <ghp/gfx.hpp>
+#include "color.hpp"
+#include "texture.hpp"
+
+#include "../math.hpp"
 
 #include <SDL.h>
 #include <SDL_image.h>
@@ -143,9 +146,9 @@ public:
     // copy pixels from internal texture to SDL surface (screen memory)
     const int num_pixels = width_ * height_;
     uint8_t *pixels = reinterpret_cast<uint8_t*>(screen_->pixels);
-    assert(screen_->format->BytesPerPixel == 3);
+    const int bpp = screen_->format->BytesPerPixel;
     for(int i=0; i<num_pixels; ++i) {
-      uint32_t *this_pixel = reinterpret_cast<uint32_t*>(pixels + 3*i);
+      uint32_t *this_pixel = reinterpret_cast<uint32_t*>(pixels + bpp*i);
       ghp::color<ghp::RGB<uint8_t> > tmp_color = texture_(i);
       *this_pixel = SDL_MapRGB(screen_->format,
         tmp_color.red(), tmp_color.blue(), tmp_color.green());
@@ -161,6 +164,16 @@ public:
   /** \brief pixel access. */
   inline ghp::color<PIXELT>& operator()(int x, int y) {
     return texture_(x, y);
+  }
+  /** \brief pixel access. */
+  inline const ghp::color<PIXELT>& operator()
+      (const ghp::vector<2, int> &v) const {
+    return texture_(v(0), v(1));
+  }
+  /** \brief pixel access. */
+  inline ghp::color<PIXELT>& operator()
+      (const ghp::vector<2, int> &v) {
+    return texture_(v(0), v(1));
   }
   /** \brief gets the screen width */
   inline int get_width() const {

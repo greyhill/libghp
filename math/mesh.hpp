@@ -1,6 +1,8 @@
 #ifndef _GHP_MATH_MESH_HPP_
 #define _GHP_MATH_MESH_HPP_
 
+#include "vertex.hpp"
+
 #include <vector>
 
 namespace ghp {
@@ -37,7 +39,7 @@ public:
     int indices_[3];
   };
 
-  typedef V vertex_t;
+  typedef vertex<V> vertex_t;
   typedef face face_t;
 
   /** \brief create a new mesh */

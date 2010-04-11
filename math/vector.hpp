@@ -101,6 +101,14 @@ public:
     return v;
   }
 
+  template<typename V>
+  operator V() const {
+    V v;
+    v.resize(N);
+    for(int i=0; i<N; ++i) v[i] = (*this)(i);
+    return v;
+  }
+
 private:
   T data_[N];
 };

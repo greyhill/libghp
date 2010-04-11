@@ -13,47 +13,34 @@ namespace ghp {
 template<typename T> struct color_traits { };
 
 template<> struct color_traits<float> {
-  static const float min_value;
-  static const float max_value;
+  static const float min_value = 0;
+  static const float max_value = 1;
 };
-const float color_traits<float>::min_value = 0;
-const float color_traits<float>::max_value = 1;
 
 template<> struct color_traits<double> {
-  static const double min_value;
-  static const double max_value;
+  static const double min_value = 0;
+  static const double max_value = 1;
 };
-const double color_traits<double>::min_value = 0;
-const double color_traits<double>::max_value = 1;
 
 template<> struct color_traits<uint8_t> {
-  static const uint8_t min_value;
-  static const uint8_t max_value;
+  static const uint8_t min_value = 0;
+  static const uint8_t max_value = 0xFF;
 };
-const uint8_t color_traits<uint8_t>::min_value = 0;
-const uint8_t color_traits<uint8_t>::max_value = 0xFF;
 
 template<> struct color_traits<uint16_t> {
-  static const uint16_t min_value;
-  static const uint16_t max_value;
+  static const uint16_t min_value = 0;
+  static const uint16_t max_value = 0xFFFF;
 };
-const uint16_t color_traits<uint16_t>::min_value = 0;
-const uint16_t color_traits<uint16_t>::max_value = 0xFFFF;
 
 template<> struct color_traits<uint32_t> {
-  static const uint32_t min_value;
-  static const uint32_t max_value;
+  static const uint32_t min_value = 0;
+  static const uint32_t max_value = 0xFFFFFFFF;
 };
-const uint32_t color_traits<uint32_t>::min_value = 0;
-const uint32_t color_traits<uint32_t>::max_value = 0xFFFFFFFF;
 
 template<> struct color_traits<uint64_t> {
-  static const uint64_t min_value;
-  static const uint64_t max_value;
+  static const uint64_t min_value = 0;
+  static const uint64_t max_value = 0xFFFFFFFFFFFFFFFFL;
 };
-const uint64_t color_traits<uint64_t>::min_value = 0;
-const uint64_t color_traits<uint64_t>::max_value = 
-  0xFFFFFFFFFFFFFFFFL;
 
 /** \brief pixel type for RGB layouts
  * \tparam T - underlying type of data
