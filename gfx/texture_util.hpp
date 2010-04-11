@@ -164,8 +164,6 @@ void convert_texture(const T1 &src, T2 &dst) {
 template<typename TEX, typename C>
 void draw_line(TEX &texture, const C &color,
     const vector<2, int> &p1, const vector<2, int> &p2) {
-  // we ``walk'' the cursor down from one coordinate to 
-  // the other
   int x = p1(0);
   int y = p1(1);
   const int xdiff = std::abs(p2(0) - x);
@@ -197,6 +195,16 @@ void draw_line(TEX &texture, const C &color,
   }
 }
 
+/**
+  \brief blit one texture onto another
+  \tparam TEX1 - has texture concept
+  \tparam TEX2 - has texture concept
+  \param src - source texture
+  \param dst - destination texture
+  \param src_p - upper-left location of source box
+  \param src_size - (src_width, src_height)
+  \param dst_p - upper-left location on dest 
+ */
 template<typename TEX1, typename TEX2>
 void blit_texture(const TEX1 &src, TEX2 &dst, 
     const vector<2, int> &src_p, const vector<2, int> &src_size,
@@ -212,6 +220,14 @@ void blit_texture(const TEX1 &src, TEX2 &dst,
   }
 }
 
+/**
+  \brief bit one texture onto another
+  \tparam TEX1 - has texture concept
+  \tparam TEX2 - has texture concept
+  \param src - source texture
+  \param dst - destination texture
+  \param dst_p - upper left-hand corner of box in destination
+ */
 template<typename TEX1, typename TEX2>
 inline void blit_texture(const TEX1 &src, TEX2 &dst,
     const vector<2, int> &dst_p) {
@@ -220,6 +236,19 @@ inline void blit_texture(const TEX1 &src, TEX2 &dst,
     dst_p);    
 }
 
+/**
+  \brief perform a simple plot of a time series onto a texture
+  \tparam TEX - has texture concept
+  \tparam D - indexible (operator[]) array of data to plot
+  \tparam V - type of data to plot, orderable
+  \tparam C - color type
+  \param texture - destination texture
+  \param data - data to plot
+  \param size - length of data
+  \param color - color of lines to draw 
+  \param min_y - value of data to map to bottom of texture
+  \param max_y - value of data to map to top of texture
+ */
 template<typename TEX, typename D, typename C, typename V>
 void plot_texture(TEX &texture, const D &data, int size,
     const C &color, const V &min_y, const V &max_y) {
@@ -241,12 +270,31 @@ void plot_texture(TEX &texture, const D &data, int size,
   }
 }
 
+/**
+  \brief perform a simple plot of a time series onto a texture
+  \tparam TEX - has texture concept
+  \tparam D - indexible (operator[]) array of data to plot, has .size()
+  \tparam V - type of data to plot, orderable
+  \tparam C - has color concept
+  \param texture - destination texture
+  \param data - data to plot
+  \param color - color of lines to draw 
+  \param min_y - value of data to map to bottom of texture
+  \param max_y - value of data to map to top of texture
+ */
 template<typename TEX, typename D, typename C, typename V>
 inline void plot_texture(TEX &texture, const D &data,
     const C &color, const V &min_y, const V &max_y) {
   plot_texture(texture, data, data.size(), color, min_y, max_y);
 }
 
+/**
+  \brief fill a texture with a color
+  \tparam TEX - has texture concept
+  \tparam C - has color concept
+  \param texture - destination texture
+  \param color - color to fill with
+ */
 template<typename TEX, typename C>
 void fill_texture(TEX &texture, const C &color) {
   for(int y=0; y<texture.get_height(); ++y) {
