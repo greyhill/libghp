@@ -2,12 +2,14 @@
 #define _GHP_GFX_SDL_HPP_
 
 #include "color.hpp"
+#include "font.hpp"
 #include "texture.hpp"
 
 #include "../math.hpp"
 
 #include <SDL.h>
 #include <SDL_image.h>
+#include <SDL_ttf.h>
 
 #include <stdexcept>
 #include <string>
@@ -17,14 +19,13 @@
 namespace sdl {
 
 /**
-  \brief load a texture from disk using SDL_image
-  \tparam PIXELT - desired target pixel type
-  \param path - path of texture to load
-  \param dest - where to place the texture
+  \brief convert from an SDL_Surface to a ghp texture
+  \tparam PIXELT - some pixel type
+  \param surf - source surface
+  \param dest - destination texture
  */
 template<typename PIXELT>
-void load_texture(const std::string &path, ghp::texture<PIXELT> &dest) {
-  SDL_Surface *surf = IMG_Load(path.c_str());
+void convert_surface(SDL_Surface *surf, ghp::texture<PIXELT> &dest) {
   SDL_LockSurface(surf);
   if(surf == NULL) {
     throw std::runtime_error(IMG_GetError());
@@ -66,6 +67,18 @@ void load_texture(const std::string &path, ghp::texture<PIXELT> &dest) {
     throw std::runtime_error("can only load 3 or 4 BytesPerPixel images");
   }
   SDL_UnlockSurface(surf);
+}
+
+/**
+  \brief load a texture from disk using SDL_image
+  \tparam PIXELT - desired target pixel type
+  \param path - path of texture to load
+  \param dest - where to place the texture
+ */
+template<typename PIXELT>
+void load_texture(const std::string &path, ghp::texture<PIXELT> &dest) {
+  SDL_Surface *surf = IMG_Load(path.c_str());
+  convert_surface(surf, dest);
   SDL_FreeSurface(surf);
 }
 
@@ -101,6 +114,20 @@ void save_bmp(const std::string &path, const ghp::texture<PIXELT> &src) {
   SDL_SaveBMP(surf, path.c_str());
   SDL_UnlockSurface(surf);
   SDL_FreeSurface(surf);
+}
+
+/**
+  \brief loads the ASCII characters from a TTF font file into a font object
+  \tparam PIXELT - pixel type
+  \param path - path of TTF font file
+  \param pt_size - point size (based on 72DPI) to load font
+  \param color - color to draw text in
+  \param font - output font object
+ */
+template<typename PIXELT>
+void load_ttf_font_ascii(const std::string &path, int pt_size, 
+    ghp::color<PIXELT> &color,
+    ghp::font<char, PIXELT> &font) {
 }
 
 /**

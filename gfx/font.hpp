@@ -7,12 +7,13 @@
 #include "../math.hpp"
 
 #include <map>
+#include <stdexcept>
 
 namespace ghp {
 
 template<typename PIXELT>
 class glyph {
-public
+public:
   typedef PIXELT pixel_t;
 
   glyph() {
@@ -24,7 +25,9 @@ public
   inline int get_height() const { return texture_.get_height(); }
   inline int get_rows() const { return texture_.get_rows(); }
   inline int get_cols() const { return texture_.get_cols(); }
-  inline void resize(int width, int height) { texture_.resize(width, height); }
+  inline void resize(int width, int height) { 
+    texture_.resize(width, height); 
+  }
 
   inline color<pixel_t>& operator()(int x, int y) {
     return texture_(x, y);
@@ -45,9 +48,11 @@ public
     return texture_[i];
   }
 
+  int get_advance() const { return advance_; }
+  void set_advance(int i) { advance_ = i; }
+
 private:
   texture<pixel_t> texture_;
-  vector<2, int> glyph_dims_;
   int advance_;
 };
 
@@ -57,17 +62,43 @@ public:
   typedef PIXELT pixel_t;
   typedef glyph<pixel_t> glyph_t;
 
-  font();
-  font(const font &f);
-  ~font();
+  font() {
+  }
+  font(const font &f)
+      : glyphs_(f.glyphs_) {
+  }
+  ~font() {
+  }
 
-  glyph& operator()(const K &k);
-  const glyph& operator()(const K &k) const;
-  glyph& operator[](const K &k);
-  const glyph& operator()(const K &k) const;
+  inline glyph_t& operator()(const K &k) {
+    typename std::map<K, boost::shared_ptr<glyph_t> >::iterator 
+        it = glyphs_.find(k);
+    if(it == glyphs_.end()) {
+      boost::shared_ptr<glyph_t> new_glyph(new glyph_t());
+      glyphs_[k] = new_glyph;
+      return *new_glyph;
+    } else {
+      return *(it->second);
+    }
+  }
+  const glyph_t& operator()(const K &k) const {
+    typename std::map<K, boost::shared_ptr<glyph_t> >::const_iterator 
+        it = glyphs_.find(k);
+    if(it == glyphs_.end()) {
+      throw std::runtime_error("font doesn't contain that glyph!");
+    } else {
+      return *(it->second);
+    }
+  }
+  inline glyph_t& operator[](const K &k) {
+    return (*this)(k);
+  }
+  inline const glyph_t& operator[](const K &k) const {
+    return (*this)(k);
+  }
 
 private:
-  std::map<K, boost::shared_ptr<glyph_t> glyphs_;
+  std::map<K, boost::shared_ptr<glyph_t> > glyphs_;
 };
 
 }
