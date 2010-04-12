@@ -178,18 +178,20 @@ struct blit_color_fct {
 template<typename T1, typename P2>
 struct blit_color_fct<RGBA<T1>, P2> {
   inline void operator()(const RGBA<T1> &src, P2 &dst) {
-    // TODO make this not suck.
-    dst = linear_interpolate(
-      dst, P2(), static_cast<P2>(src), RGBA<T1>(), src.alpha()
-    );
+    const int min_ch = std::min(
+      static_cast<int>(RGBA<T1>::num_channels),
+      static_cast<int>(P2::num_channels));
+    for(int i=0; i<min_ch; ++i) {
+      dst(i) = linear_interpolate(
+        dst(i),
+        src(i),
+        color_traits<T1>::min_value(),
+        color_traits<T1>::max_value(),
+        src.alpha()
+      );
+    }
   }
 };
-
-template<typename P1, typename P2>
-inline void blit_color(const P1 &src, P2 &dst) {
-  blit_color_fct<P1, P2> fct;
-  fct(src, dst);
-}
 
 /**
   \brief convertable, generic color interface
@@ -301,6 +303,20 @@ std::ostream& operator<<(std::ostream& o, const color<PIXELT> &c) {
   }
   return o;
 }
+
+/**
+  \brief blit (draw) one color on top of another
+  \tparam P1 - pixel type of source color
+  \tparam P2 - pixel type of destination color
+  \param src - source color
+  \param dst - destination color
+ */
+template<typename P1, typename P2>
+inline void blit_color(const color<P1> &src, color<P2> &dst) {
+  blit_color_fct<P1, P2> fct;
+  fct(src, dst);
+}
+
 
 }
 
