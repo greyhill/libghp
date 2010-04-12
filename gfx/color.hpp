@@ -13,33 +13,33 @@ namespace ghp {
 template<typename T> struct color_traits { };
 
 template<> struct color_traits<float> {
-  static const float min_value = 0;
-  static const float max_value = 1;
+  inline static const float min_value() { return 0; }
+  inline static const float max_value() { return 1; }
 };
 
 template<> struct color_traits<double> {
-  static const double min_value = 0;
-  static const double max_value = 1;
+  inline static const double min_value() { return 0; }
+  inline static const double max_value() { return 1; }
 };
 
 template<> struct color_traits<uint8_t> {
-  static const uint8_t min_value = 0;
-  static const uint8_t max_value = 0xFF;
+  inline static const uint8_t min_value() { return 0; }
+  inline static const uint8_t max_value() { return 0xFF; }
 };
 
 template<> struct color_traits<uint16_t> {
-  static const uint16_t min_value = 0;
-  static const uint16_t max_value = 0xFFFF;
+  inline static const uint16_t min_value() { return 0x0000; }
+  inline static const uint16_t max_value() { return 0xFFFF; }
 };
 
 template<> struct color_traits<uint32_t> {
-  static const uint32_t min_value = 0;
-  static const uint32_t max_value = 0xFFFFFFFF;
+  inline static const uint32_t min_value() { return 0; }
+  inline static const uint32_t max_value() { return 0xFFFFFFFF; }
 };
 
 template<> struct color_traits<uint64_t> {
-  static const uint64_t min_value = 0;
-  static const uint64_t max_value = 0xFFFFFFFFFFFFFFFFL;
+  inline static const uint64_t min_value() { return 0; }
+  inline static const uint64_t max_value() { return 0xFFFFFFFFFFFFFFFFL; }
 };
 
 /** \brief pixel type for RGB layouts
@@ -54,11 +54,11 @@ public:
 
   RGB() {
     for(uint8_t i=0; i<num_channels; ++i) 
-      data_[i] = color_traits<T>::min_value;
+      data_[i] = color_traits<T>::min_value();
   }
   RGB(T r, 
-      T g = color_traits<T>::min_value, 
-      T b = color_traits<T>::min_value) {
+      T g = color_traits<T>::min_value(), 
+      T b = color_traits<T>::min_value()) {
     data_[0] = r;
     data_[1] = g;
     data_[2] = b;
@@ -94,12 +94,12 @@ public:
 
   RGBA() {
     for(uint8_t i=0; i<num_channels; ++i) 
-      data_[i] = color_traits<T>::min_value;
+      data_[i] = color_traits<T>::min_value();
   }
   RGBA(T r, 
-      T g = color_traits<T>::min_value, 
-      T b = color_traits<T>::min_value, 
-      T a = color_traits<T>::min_value) {
+      T g = color_traits<T>::min_value(), 
+      T b = color_traits<T>::min_value(), 
+      T a = color_traits<T>::min_value()) {
     data_[0] = r;
     data_[1] = g;
     data_[2] = b;
@@ -137,10 +137,10 @@ struct convert_color {
       static_cast<int>(PIXELT2::num_channels));
     for(int i=0; i<min_ch; ++i) {
       dest(i) = linear_interpolate(
-        color_traits<typename PIXELT2::value_t>::min_value,
-        color_traits<typename PIXELT2::value_t>::max_value,
-        color_traits<typename PIXELT1::value_t>::min_value,
-        color_traits<typename PIXELT2::value_t>::max_value,
+        color_traits<typename PIXELT2::value_t>::min_value(),
+        color_traits<typename PIXELT2::value_t>::max_value(),
+        color_traits<typename PIXELT1::value_t>::min_value(),
+        color_traits<typename PIXELT2::value_t>::max_value(),
         src(i)
       );
     }
@@ -153,14 +153,14 @@ struct convert_color<RGB<T1>, RGB<T2> > {
       const RGBA<T2> &dest) {
     for(int i=0; i<3; ++i) {
       dest(i) = linear_interpolate(
-        color_traits<T2>::min_value,
-        color_traits<T2>::max_value,
-        color_traits<T1>::min_value,
-        color_traits<T1>::max_value,
+        color_traits<T2>::min_value(),
+        color_traits<T2>::max_value(),
+        color_traits<T1>::min_value(),
+        color_traits<T1>::max_value(),
         src(i)
       );
     }
-    dest(3) = color_traits<T2>::max_value;
+    dest(3) = color_traits<T2>::max_value();
   }
 };
 

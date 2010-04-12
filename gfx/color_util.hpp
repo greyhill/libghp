@@ -16,44 +16,44 @@ template<typename T> struct standard_colors<RGB<T> > {
 };
 template<typename T> const color<RGB<T> > 
   standard_colors<RGB<T> >::RED(
-    color_traits<T>::max_value, 
-    color_traits<T>::min_value, 
-    color_traits<T>::min_value);
+    color_traits<T>::max_value(), 
+    color_traits<T>::min_value(), 
+    color_traits<T>::min_value());
 template<typename T> const color<RGB<T> > 
   standard_colors<RGB<T> >::GREEN(
-    color_traits<T>::min_value, 
-    color_traits<T>::max_value, 
-    color_traits<T>::min_value);
+    color_traits<T>::min_value(), 
+    color_traits<T>::max_value(), 
+    color_traits<T>::min_value());
 template<typename T> const color<RGB<T> > 
   standard_colors<RGB<T> >::BLUE(
-    color_traits<T>::min_value, 
-    color_traits<T>::min_value, 
-    color_traits<T>::max_value);
+    color_traits<T>::min_value(), 
+    color_traits<T>::min_value(), 
+    color_traits<T>::max_value());
 template<typename T> const color<RGB<T> > 
   standard_colors<RGB<T> >::WHITE(
-    color_traits<T>::max_value, 
-    color_traits<T>::max_value, 
-    color_traits<T>::max_value);
+    color_traits<T>::max_value(), 
+    color_traits<T>::max_value(), 
+    color_traits<T>::max_value());
 template<typename T> const color<RGB<T> >
   standard_colors<RGB<T> >::BLACK(
-    color_traits<T>::min_value, 
-    color_traits<T>::min_value, 
-    color_traits<T>::min_value);
+    color_traits<T>::min_value(), 
+    color_traits<T>::min_value(), 
+    color_traits<T>::min_value());
 template<typename T> const color<RGB<T> >
   standard_colors<RGB<T> >::PURPLE(
-    color_traits<T>::max_value, 
-    color_traits<T>::min_value, 
-    color_traits<T>::max_value);
+    color_traits<T>::max_value(), 
+    color_traits<T>::min_value(), 
+    color_traits<T>::max_value());
 template<typename T> const color<RGB<T> >
   standard_colors<RGB<T> >::YELLOW(
-    color_traits<T>::max_value, 
-    color_traits<T>::max_value, 
-    color_traits<T>::min_value);
+    color_traits<T>::max_value(), 
+    color_traits<T>::max_value(), 
+    color_traits<T>::min_value());
 template<typename T> const color<RGB<T> >
   standard_colors<RGB<T> >::CYAN(
-    color_traits<T>::min_value, 
-    color_traits<T>::max_value, 
-    color_traits<T>::max_value);
+    color_traits<T>::min_value(), 
+    color_traits<T>::max_value(), 
+    color_traits<T>::max_value());
 
 template<typename T> struct standard_colors<RGBA<T> > {
   static const color<RGBA<T> > RED;
@@ -68,58 +68,58 @@ template<typename T> struct standard_colors<RGBA<T> > {
 };
 template<typename T> const color<RGBA<T> >
   standard_colors<RGBA<T> >::RED(
-    color_traits<T>::max_value, 
-    color_traits<T>::min_value, 
-    color_traits<T>::min_value, 
-    color_traits<T>::max_value);
+    color_traits<T>::max_value(), 
+    color_traits<T>::min_value(), 
+    color_traits<T>::min_value(), 
+    color_traits<T>::max_value());
 template<typename T> const color<RGBA<T> >
   standard_colors<RGBA<T> >::GREEN(
-    color_traits<T>::min_value, 
-    color_traits<T>::max_value, 
-    color_traits<T>::min_value, 
-    color_traits<T>::max_value);
+    color_traits<T>::min_value(), 
+    color_traits<T>::max_value(), 
+    color_traits<T>::min_value(), 
+    color_traits<T>::max_value());
 template<typename T> const color<RGBA<T> >
   standard_colors<RGBA<T> >::BLUE(
-    color_traits<T>::min_value, 
-    color_traits<T>::min_value,
-    color_traits<T>::max_value, 
-    color_traits<T>::max_value);
+    color_traits<T>::min_value(), 
+    color_traits<T>::min_value(),
+    color_traits<T>::max_value(), 
+    color_traits<T>::max_value());
 template<typename T> const color<RGBA<T> >
   standard_colors<RGBA<T> >::WHITE(
-    color_traits<T>::max_value, 
-    color_traits<T>::max_value, 
-    color_traits<T>::max_value,
-    color_traits<T>::max_value);
+    color_traits<T>::max_value(), 
+    color_traits<T>::max_value(), 
+    color_traits<T>::max_value(),
+    color_traits<T>::max_value());
 template<typename T> const color<RGBA<T> >
   standard_colors<RGBA<T> >::BLACK(
-    color_traits<T>::min_value, 
-    color_traits<T>::min_value, 
-    color_traits<T>::min_value, 
-    color_traits<T>::max_value);
+    color_traits<T>::min_value(), 
+    color_traits<T>::min_value(), 
+    color_traits<T>::min_value(), 
+    color_traits<T>::max_value());
 template<typename T> const color<RGBA<T> >
   standard_colors<RGBA<T> >::PURPLE(
-    color_traits<T>::max_value, 
-    color_traits<T>::min_value, 
-    color_traits<T>::max_value, 
-    color_traits<T>::max_value);
+    color_traits<T>::max_value(), 
+    color_traits<T>::min_value(), 
+    color_traits<T>::max_value(), 
+    color_traits<T>::max_value());
 template<typename T> const color<RGBA<T> >
   standard_colors<RGBA<T> >::YELLOW(
-    color_traits<T>::max_value, 
-    color_traits<T>::max_value, 
-    color_traits<T>::min_value, 
-    color_traits<T>::max_value);
+    color_traits<T>::max_value(), 
+    color_traits<T>::max_value(), 
+    color_traits<T>::min_value(), 
+    color_traits<T>::max_value());
 template<typename T> const color<RGBA<T> >
   standard_colors<RGBA<T> >::CYAN(
-    color_traits<T>::min_value, 
-    color_traits<T>::max_value, 
-    color_traits<T>::max_value, 
-    color_traits<T>::max_value);
+    color_traits<T>::min_value(), 
+    color_traits<T>::max_value(), 
+    color_traits<T>::max_value(), 
+    color_traits<T>::max_value());
 template<typename T> const color<RGBA<T> >
   standard_colors<RGBA<T> >::TRANSPARENT(
-    color_traits<T>::min_value,
-    color_traits<T>::min_value, 
-    color_traits<T>::min_value, 
-    color_traits<T>::max_value);
+    color_traits<T>::min_value(),
+    color_traits<T>::min_value(), 
+    color_traits<T>::min_value(), 
+    color_traits<T>::max_value());
 
 }
 
