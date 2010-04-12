@@ -178,7 +178,7 @@ public:
       uint32_t *this_pixel = reinterpret_cast<uint32_t*>(pixels + bpp*i);
       ghp::color<ghp::RGB<uint8_t> > tmp_color = texture_(i);
       *this_pixel = SDL_MapRGB(screen_->format,
-        tmp_color.red(), tmp_color.blue(), tmp_color.green());
+        tmp_color.red(), tmp_color.green(), tmp_color.blue());
     }
     // ...aaand update
     SDL_Flip(screen_);
