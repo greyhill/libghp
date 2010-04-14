@@ -18,6 +18,10 @@ public:
 
   glyph() {
   }
+  glyph(const glyph &g) 
+      : texture_(g.texture_),
+      advance_(g.advance_) {
+  }
   ~glyph() {
   }
 
@@ -40,6 +44,12 @@ public:
   }
   inline const color<pixel_t>& operator()(const vector<2, int> &v) const {
     return texture_(v);
+  }
+  inline color<pixel_t>& operator()(int i) {
+    return texture_(i);
+  }
+  inline const color<pixel_t>& operator()(int i) const {
+    return texture_(i);
   }
   inline color<pixel_t>& operator[](int i) {
     return texture_[i];

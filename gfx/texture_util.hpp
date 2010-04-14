@@ -230,7 +230,7 @@ void blit_texture(const TEX1 &src, TEX2 &dst,
  */
 template<typename TEX1, typename TEX2>
 inline void blit_texture(const TEX1 &src, TEX2 &dst,
-    const vector<2, int> &dst_p) {
+    const vector<2, int> &dst_p = vector2<int>(0, 0) ) {
   blit_texture(src, dst, vector2<int>(0, 0),
     vector2<int>(src.get_width(), src.get_height()),
     dst_p);    

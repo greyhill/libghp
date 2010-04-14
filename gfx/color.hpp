@@ -10,6 +10,7 @@
 
 namespace ghp {
 
+template<typename T> class color;
 template<typename T> struct color_traits { };
 
 template<> struct color_traits<float> {
@@ -129,9 +130,11 @@ private:
 // conversions, e.g. between CMY and RGB.  specializations
 // will be automatically picked up by color<>'s cast
 // operator.
-template<typename PIXELT1, typename PIXELT2>
+template<typename C1, typename C2>
 struct convert_color {
-  inline void operator()(const PIXELT1 &src, PIXELT2 &dest) {
+  inline void operator()(const C1 &src, C2 &dest) {
+    typedef typename C1::pixel_t PIXELT1;
+    typedef typename C2::pixel_t PIXELT2;
     int min_ch = std::min(
       static_cast<int>(PIXELT1::num_channels),
       static_cast<int>(PIXELT2::num_channels));
@@ -140,7 +143,7 @@ struct convert_color {
         color_traits<typename PIXELT2::value_t>::min_value(),
         color_traits<typename PIXELT2::value_t>::max_value(),
         color_traits<typename PIXELT1::value_t>::min_value(),
-        color_traits<typename PIXELT2::value_t>::max_value(),
+        color_traits<typename PIXELT1::value_t>::max_value(),
         src(i)
       );
     }
@@ -148,9 +151,9 @@ struct convert_color {
 };
 
 template<typename T1, typename T2>
-struct convert_color<RGB<T1>, RGB<T2> > {
-  inline void operator()(const RGB<T1> &src, 
-      const RGBA<T2> &dest) {
+struct convert_color<color<RGB<T1> >, color<RGBA<T2> > > {
+  inline void operator()(const color<RGB<T1> > &src, 
+      color<RGBA<T2> > &dest) {
     for(int i=0; i<3; ++i) {
       dest(i) = linear_interpolate(
         color_traits<T2>::min_value(),
@@ -160,7 +163,7 @@ struct convert_color<RGB<T1>, RGB<T2> > {
         src(i)
       );
     }
-    dest(3) = color_traits<T2>::max_value();
+    dest.alpha() = color_traits<T2>::max_value();
   }
 };
 
@@ -168,23 +171,29 @@ struct convert_color<RGB<T1>, RGB<T2> > {
 // proper blitting of more exotic colors.  For example,
 // a specialization is provided to ensure proper blitting
 // of alpha-valued pixels.
-template<typename P1, typename P2>
+template<typename C1, typename C2>
 struct blit_color_fct {
-  inline void operator()(const P1 &src, P2 &dst) {
+  inline void operator()(const C1 &src, C2 &dst) {
     dst = src;
   }
 };
 
 template<typename T1, typename P2>
-struct blit_color_fct<RGBA<T1>, P2> {
-  inline void operator()(const RGBA<T1> &src, P2 &dst) {
+struct blit_color_fct<color<RGBA<T1> >, color<P2> > {
+  inline void operator()(const color<RGBA<T1> > &src, color<P2> &dst) {
     const int min_ch = std::min(
       static_cast<int>(RGBA<T1>::num_channels),
       static_cast<int>(P2::num_channels));
     for(int i=0; i<min_ch; ++i) {
       dst(i) = linear_interpolate(
         dst(i),
-        src(i),
+        linear_interpolate(
+          color_traits<typename P2::value_t>::min_value(),
+          color_traits<typename P2::value_t>::max_value(),
+          color_traits<T1>::min_value(),
+          color_traits<T1>::max_value(),
+          src(i)
+        ),
         color_traits<T1>::min_value(),
         color_traits<T1>::max_value(),
         src.alpha()
@@ -205,6 +214,8 @@ struct blit_color_fct<RGBA<T1>, P2> {
  */
 template<typename PIXELT> class color : public PIXELT {
 public:
+  typedef PIXELT pixel_t;
+
   color() {
   }
   color(typename PIXELT::value_t a0) 
@@ -280,7 +291,7 @@ public:
   template<typename PIXEL2>
   inline operator color<PIXEL2>() const {
     color<PIXEL2> to_return;
-    convert_color<PIXELT, PIXEL2> cc;
+    convert_color<color<PIXELT>, color<PIXEL2> > cc;
     cc(*this, to_return);
     return to_return;
   }
@@ -294,7 +305,7 @@ std::ostream& operator<<(std::ostream& o, const color<PIXELT> &c) {
     << PIXELT::bytes_per_pixel
     << ", data: (";
   for(int i=0; i<PIXELT::num_channels; ++i) {
-    o << c(i);
+    o << static_cast<float>(c(i));
     if(i == PIXELT::num_channels - 1) {
       o << ")";
     } else {
@@ -313,7 +324,7 @@ std::ostream& operator<<(std::ostream& o, const color<PIXELT> &c) {
  */
 template<typename P1, typename P2>
 inline void blit_color(const color<P1> &src, color<P2> &dst) {
-  blit_color_fct<P1, P2> fct;
+  blit_color_fct<color<P1>, color<P2> > fct;
   fct(src, dst);
 }
 

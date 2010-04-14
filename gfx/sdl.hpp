@@ -20,12 +20,13 @@ namespace sdl {
 
 /**
   \brief convert from an SDL_Surface to a ghp texture
-  \tparam PIXELT - some pixel type
+  \tparam TEX - has texture concept
   \param surf - source surface
   \param dest - destination texture
  */
-template<typename PIXELT>
-void convert_surface(SDL_Surface *surf, ghp::texture<PIXELT> &dest) {
+template<typename TEX>
+void convert_surface(SDL_Surface *surf, TEX &dest) {
+  typedef typename TEX::pixel_t PIXELT;
   SDL_LockSurface(surf);
   if(surf == NULL) {
     throw std::runtime_error(IMG_GetError());
@@ -34,22 +35,24 @@ void convert_surface(SDL_Surface *surf, ghp::texture<PIXELT> &dest) {
   const int num_pixels = dest.get_width() * dest.get_height();
   const uint8_t *pixels = reinterpret_cast<const uint8_t*>(surf->pixels);
   if(surf->format->BytesPerPixel == 3) {
-    for(int pix_id = 0; pix_id < num_pixels; ++pix_id) {
-      ghp::color<ghp::RGB<typename PIXELT::value_t> > pixel;
-      const uint32_t *src_pixel = reinterpret_cast<const uint32_t*>(
-          pixels + 3*pix_id);
-      uint8_t r, g, b;
-      SDL_GetRGB(
-        *src_pixel,
-        surf->format,
-        &r, &g, &b
-      );
-      pixel.red() = r; pixel.green() = g; pixel.blue() = b;
-      dest(pix_id) = pixel;
+    for(int y=0; y<surf->h; ++y) {
+      for(int x=0; x<surf->w; ++x) {
+        ghp::color<ghp::RGB<uint8_t> > pixel;
+        const uint32_t *src_pixel = reinterpret_cast<const uint32_t*>(
+            pixels + y*surf->pitch + 3*x);
+        uint8_t r, g, b;
+        SDL_GetRGB(
+          *src_pixel,
+          surf->format,
+          &r, &g, &b
+        );
+        pixel.red() = r; pixel.green() = g; pixel.blue() = b;
+        dest(x, y) = pixel;
+      }
     }
   } else if(surf->format->BytesPerPixel == 4) {
     for(int pix_id = 0; pix_id < num_pixels; ++pix_id) {
-      ghp::color<ghp::RGBA<typename PIXELT::value_t> > pixel;
+      ghp::color<ghp::RGBA<uint8_t> > pixel;
       const uint32_t *src_pixel = reinterpret_cast<const uint32_t*>(
           pixels + 4*pix_id);
       uint8_t r, g, b, a;
@@ -76,7 +79,7 @@ void convert_surface(SDL_Surface *surf, ghp::texture<PIXELT> &dest) {
   \param dest - where to place the texture
  */
 template<typename PIXELT>
-void load_texture(const std::string &path, ghp::texture<PIXELT> &dest) {
+void load_image(const std::string &path, ghp::texture<PIXELT> &dest) {
   SDL_Surface *surf = IMG_Load(path.c_str());
   convert_surface(surf, dest);
   SDL_FreeSurface(surf);
@@ -84,28 +87,30 @@ void load_texture(const std::string &path, ghp::texture<PIXELT> &dest) {
 
 /**
   \brief save a texture to disk as a BMP
-  \tparam PIXELT - pixel type
+  \tparam TEX - texture type
   \param path - path to save to
   \param src - texture to save
  */
-template<typename PIXELT>
-void save_bmp(const std::string &path, const ghp::texture<PIXELT> &src) {
+template<typename TEX>
+void save_bmp(const std::string &path, const TEX &src) {
+  typedef typename TEX::pixel_t PIXELT;
   SDL_Surface *surf = SDL_CreateRGBSurface(SDL_SWSURFACE, 
       src.get_width(), src.get_height(), 
-      24,
-      0xFF0000,
-      0x00FF00,
-      0x0000FF,
-      0x000000);
+      32,
+      0x00FF0000,
+      0x0000FF00,
+      0x000000FF,
+      0x00000000);
   if(surf == NULL) throw std::runtime_error(SDL_GetError());
   SDL_LockSurface(surf);
   const int num_pixels = src.get_width() * src.get_height();
+  const int bpp = surf->format->BytesPerPixel;
   uint8_t *dest_pixels = reinterpret_cast<uint8_t*>(surf->pixels);
   for(int i=0; i<num_pixels; ++i) {
     uint32_t *this_pixel = reinterpret_cast<uint32_t*>(
-        dest_pixels + 3*i);
+        dest_pixels + bpp*i);
     ghp::color<ghp::RGB<uint8_t> > convert_color = src(i);
-    *this_pixel = SDL_MapRGB(surf->format,
+    *this_pixel = SDL_MapRGB(surf->format, 
         convert_color.red(),
         convert_color.green(),
         convert_color.blue()
@@ -126,8 +131,29 @@ void save_bmp(const std::string &path, const ghp::texture<PIXELT> &src) {
  */
 template<typename PIXELT>
 void load_ttf_font_ascii(const std::string &path, int pt_size, 
-    ghp::color<PIXELT> &color,
-    ghp::font<char, PIXELT> &font) {
+    const ghp::color<PIXELT> &color,
+    ghp::font<PIXELT, char> &font) {
+  if(!TTF_WasInit()) {
+    if(TTF_Init() == -1) {
+      throw std::runtime_error(TTF_GetError());
+    }
+  }
+  TTF_Font *ttf_font = TTF_OpenFont(path.c_str(), pt_size);
+  if(ttf_font == NULL) {
+    throw std::runtime_error(TTF_GetError());
+  }
+  ghp::color<ghp::RGB<uint8_t> > color_temp = color;
+  SDL_Color sdl_color = { color.red(), color.green(), color.blue() };
+  for(char c=' '; c <= '~'; ++c) {
+    SDL_Surface *surf = TTF_RenderGlyph_Blended(ttf_font, c, sdl_color);
+    if(surf == NULL) {
+      TTF_CloseFont(ttf_font);
+      throw std::runtime_error(TTF_GetError());
+    }
+    convert_surface(surf, font[c]);
+    SDL_FreeSurface(surf);
+  }
+  TTF_CloseFont(ttf_font);
 }
 
 /**
