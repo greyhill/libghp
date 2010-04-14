@@ -143,7 +143,10 @@ void load_ttf_font_ascii(const std::string &path, int pt_size,
     throw std::runtime_error(TTF_GetError());
   }
   ghp::color<ghp::RGB<uint8_t> > color_temp = color;
-  SDL_Color sdl_color = { color.red(), color.green(), color.blue() };
+  SDL_Color sdl_color = { 
+      color_temp.red(), 
+      color_temp.green(), 
+      color_temp.blue() };
   for(char c=' '; c <= '~'; ++c) {
     SDL_Surface *surf = TTF_RenderGlyph_Blended(ttf_font, c, sdl_color);
     if(surf == NULL) {

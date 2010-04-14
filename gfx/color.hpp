@@ -151,6 +151,15 @@ struct convert_color {
 };
 
 template<typename T1, typename T2>
+struct convert_color<color<RGBA<T1> >, color<RGB<T2> > > {
+  inline void operator()(const color<RGBA<T1> > &src,
+      color<RGB<T2> > &dest) {
+    dest = color<RGB<T2> >(); // background, whatever that is (probably black)
+    blit_color(src, dest); // account for alpha
+  }
+};
+
+template<typename T1, typename T2>
 struct convert_color<color<RGB<T1> >, color<RGBA<T2> > > {
   inline void operator()(const color<RGB<T1> > &src, 
       color<RGBA<T2> > &dest) {
