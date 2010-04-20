@@ -142,12 +142,20 @@ void load_ttf_font_ascii(const std::string &path, int pt_size,
   if(ttf_font == NULL) {
     throw std::runtime_error(TTF_GetError());
   }
+
+  // determine font characteristics
+  font.set_height(TTF_GetHeight(font));
+  font.set_ascent(TTF_GetAscent(font));
+  font.set_descent(TTF_GetDescent(font));
+  font.set_line_skip(TTF_FontLineSkip(font));
+
   ghp::color<ghp::RGB<uint8_t> > color_temp = color;
   SDL_Color sdl_color = { 
       color_temp.red(), 
       color_temp.green(), 
       color_temp.blue() };
   for(char c=' '; c <= '~'; ++c) {
+    // set glyph graphics
     SDL_Surface *surf = TTF_RenderGlyph_Blended(ttf_font, c, sdl_color);
     if(surf == NULL) {
       TTF_CloseFont(ttf_font);
@@ -155,6 +163,17 @@ void load_ttf_font_ascii(const std::string &path, int pt_size,
     }
     convert_surface(surf, font[c]);
     SDL_FreeSurface(surf);
+
+    // set glyph characteristics
+    int minx, maxx, miny, maxy, advance;
+    if(TTF_GlyphMetrics(ttf_font, c, &minx, &maxx, 
+        &miny, &maxy, &advance) != 0) {
+      TTF_CloseFont(ttf_font);
+      throw std::runtime_error(TTF_GetError());
+    }
+    font[c].set_min( vector2f<int>(minx, miny) );
+    font[c].set_max( vector2f<int>(maxx, maxy) );
+    font[c].set_advance( advance );
   }
   TTF_CloseFont(ttf_font);
 }
