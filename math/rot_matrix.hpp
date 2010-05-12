@@ -81,6 +81,17 @@ public:
     }
     return out;
   }
+  inline vector<N-1, T> operator*(const vector<N-1, T> &v) const {
+    vector<N-1, T> out;
+    for(int r=0; r<N-1; ++r) {
+      T cell = 0;
+      for(int k=0; k<N-1; ++k) {
+        cell += v(k) * (*this)(r, k);
+      }
+      out(r) = cell;
+    }
+    return out;
+  }
   inline rot_matrix operator/(const rot_matrix &m) const {
     rot_matrix tmp;
     m.invert(tmp);
@@ -123,6 +134,17 @@ public:
       T cell = 0;
       for(int k=0; k<N; ++k) {
         cell += v(k) * (*this)(r,k);
+      }
+      out(r) = cell;
+    }
+  }
+  template<typename T2, typename T3>
+  inline void post_multiply(const vector<N-1, T2> &v, 
+      vector<N-1, T3> &out) const {
+    for(int r=0; r<N-1; ++r) {
+      T cell = 0;
+      for(int k=0; k<N-1; ++k) {
+        cell += v(k) * (*this)(r, k);
       }
       out(r) = cell;
     }

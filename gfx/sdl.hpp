@@ -171,8 +171,8 @@ void load_ttf_font_ascii(const std::string &path, int pt_size,
       TTF_CloseFont(ttf_font);
       throw std::runtime_error(TTF_GetError());
     }
-    font[c].set_min( vector2f<int>(minx, miny) );
-    font[c].set_max( vector2f<int>(maxx, maxy) );
+    font[c].set_min( ghp::vector2<int>(minx, miny) );
+    font[c].set_max( ghp::vector2<int>(maxx, maxy) );
     font[c].set_advance( advance );
   }
   TTF_CloseFont(ttf_font);
