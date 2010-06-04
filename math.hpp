@@ -7,6 +7,7 @@
 #include "math/rot_complex.hpp"
 #include "math/rot_matrix.hpp"
 #include "math/rot_quat.hpp"
+#include "math/scene_graph.hpp"
 #include "math/signum.hpp"
 #include "math/spatial.hpp"
 #include "math/spatial_common.hpp"

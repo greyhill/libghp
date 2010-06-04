@@ -29,7 +29,7 @@ private:
   static boost::scoped_ptr<T> global_ref_;
 };
 template<typename T>
-static boost::scoped_ptr<T> global<T>::global_ref_;
+boost::scoped_ptr<T> global<T>::global_ref_;
 
 }
 
