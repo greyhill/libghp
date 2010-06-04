@@ -20,7 +20,7 @@ namespace ghp {
 template<typename PIXELT>
 class texture {
 public:
-  typedef PIXELT pixel_t;
+  typedef PIXELT pixel_type;
 
   /** \brief create a new 0x0 texture
    */

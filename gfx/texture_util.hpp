@@ -22,7 +22,7 @@ struct direct_copy {
   template<typename T1, typename T2>
   void operator()(const T1 &src, 
       int sx, int sy, T2 &out) {
-    typedef typename T1::pixel_t PIXELT;
+    typedef typename T1::pixel_type PIXELT;
     if( (sx >= 0) && (sx < src.get_width())
         && (sy >= 0) && (sy < src.get_height()) ) {
       out = src(sx, sy);
@@ -48,8 +48,8 @@ struct average_copy {
   template<typename T1, typename T2>
   void operator()(const T1 &src,
       int sx, int sy, T2 &out) {
-    typedef typename T1::pixel_t PIXELT1;
-    typedef typename T2::pixel_t PIXELT2;
+    typedef typename T1::pixel_type PIXELT1;
+    typedef typename T2::pixel_type PIXELT2;
     color<PIXELT1> pixel;
     float num_pixels = 0;
     for(int y = std::max(0, sy-SIZE); 
@@ -75,8 +75,8 @@ template<typename SRCGET, typename T1, typename T2>
 inline void scale_texture(
     const T1 &src,
     T2 &dest) {
-  typedef typename T1::pixel_t PIXELT1;
-  typedef typename T2::pixel_t PIXELT2;
+  typedef typename T1::pixel_type PIXELT1;
+  typedef typename T2::pixel_type PIXELT2;
   SRCGET srcget;
   for(int dy = 0; dy < dest.get_height(); ++dy) {
     const int sy = linear_interpolate(
@@ -116,8 +116,8 @@ void rotate_texture_long(
  */
 template<typename SRCGET, typename T1, typename T2>
 inline void rotate_texture(const T1 &src, float degrees, T2 &dest) {
-  typedef typename T1::pixel_t PIXELT;
-  typedef typename T2::pixel_t PIXELT2;
+  typedef typename T1::pixel_type PIXELT;
+  typedef typename T2::pixel_type PIXELT2;
   SRCGET srcget;
   const float rad = -degrees * M_PI/180.0;
   for(int dy=0; dy < dest.get_height(); ++dy) {

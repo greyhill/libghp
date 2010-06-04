@@ -49,7 +49,7 @@ template<> struct color_traits<uint64_t> {
 template<typename T>
 class RGB {
 public:
-  typedef T value_t;
+  typedef T value_type;
   enum { num_channels = 3 };
   enum { bytes_per_pixel = num_channels * sizeof(T) };
 
@@ -89,7 +89,7 @@ private:
 template<typename T>
 class RGBA {
 public:
-  typedef T value_t;
+  typedef T value_type;
   enum { num_channels = 4 };
   enum { bytes_per_pixel = num_channels * sizeof(T) };
 
@@ -133,17 +133,17 @@ private:
 template<typename C1, typename C2>
 struct convert_color {
   inline void operator()(const C1 &src, C2 &dest) {
-    typedef typename C1::pixel_t PIXELT1;
-    typedef typename C2::pixel_t PIXELT2;
+    typedef typename C1::pixel_type PIXELT1;
+    typedef typename C2::pixel_type PIXELT2;
     int min_ch = std::min(
       static_cast<int>(PIXELT1::num_channels),
       static_cast<int>(PIXELT2::num_channels));
     for(int i=0; i<min_ch; ++i) {
       dest(i) = linear_interpolate(
-        color_traits<typename PIXELT2::value_t>::min_value(),
-        color_traits<typename PIXELT2::value_t>::max_value(),
-        color_traits<typename PIXELT1::value_t>::min_value(),
-        color_traits<typename PIXELT1::value_t>::max_value(),
+        color_traits<typename PIXELT2::value_type>::min_value(),
+        color_traits<typename PIXELT2::value_type>::max_value(),
+        color_traits<typename PIXELT1::value_type>::min_value(),
+        color_traits<typename PIXELT1::value_type>::max_value(),
         src(i)
       );
     }
@@ -197,8 +197,8 @@ struct blit_color_fct<color<RGBA<T1> >, color<P2> > {
       dst(i) = linear_interpolate(
         dst(i),
         linear_interpolate(
-          color_traits<typename P2::value_t>::min_value(),
-          color_traits<typename P2::value_t>::max_value(),
+          color_traits<typename P2::value_type>::min_value(),
+          color_traits<typename P2::value_type>::max_value(),
           color_traits<T1>::min_value(),
           color_traits<T1>::max_value(),
           src(i)
@@ -223,26 +223,26 @@ struct blit_color_fct<color<RGBA<T1> >, color<P2> > {
  */
 template<typename PIXELT> class color : public PIXELT {
 public:
-  typedef PIXELT pixel_t;
+  typedef PIXELT pixel_type;
 
   color() {
   }
-  color(typename PIXELT::value_t a0) 
+  color(typename PIXELT::value_type a0) 
       : PIXELT(a0) {
   }
-  color(typename PIXELT::value_t a0,
-    typename PIXELT::value_t a1)
+  color(typename PIXELT::value_type a0,
+    typename PIXELT::value_type a1)
       : PIXELT(a0, a1) {
   }
-  color(typename PIXELT::value_t a0,
-    typename PIXELT::value_t a1,
-    typename PIXELT::value_t a2)
+  color(typename PIXELT::value_type a0,
+    typename PIXELT::value_type a1,
+    typename PIXELT::value_type a2)
       : PIXELT(a0, a1, a2) {
   }
-  color(typename PIXELT::value_t a0,
-    typename PIXELT::value_t a1,
-    typename PIXELT::value_t a2,
-    typename PIXELT::value_t a3)
+  color(typename PIXELT::value_type a0,
+    typename PIXELT::value_type a1,
+    typename PIXELT::value_type a2,
+    typename PIXELT::value_type a3)
       : PIXELT(a0, a1, a2, a3) {
   }
 

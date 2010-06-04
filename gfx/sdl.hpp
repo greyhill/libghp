@@ -26,7 +26,7 @@ namespace sdl {
  */
 template<typename TEX>
 void convert_surface(SDL_Surface *surf, TEX &dest) {
-  typedef typename TEX::pixel_t PIXELT;
+  typedef typename TEX::pixel_type PIXELT;
   SDL_LockSurface(surf);
   if(surf == NULL) {
     throw std::runtime_error(IMG_GetError());
@@ -93,7 +93,7 @@ void load_image(const std::string &path, ghp::texture<PIXELT> &dest) {
  */
 template<typename TEX>
 void save_bmp(const std::string &path, const TEX &src) {
-  typedef typename TEX::pixel_t PIXELT;
+  typedef typename TEX::pixel_type PIXELT;
   SDL_Surface *surf = SDL_CreateRGBSurface(SDL_SWSURFACE, 
       src.get_width(), src.get_height(), 
       32,
@@ -186,7 +186,7 @@ void load_ttf_font_ascii(const std::string &path, int pt_size,
 template<typename PIXELT>
 class soft_display {
 public:
-  typedef PIXELT pixel_t;
+  typedef PIXELT pixel_type;
 
   /**
     \brief create a new software display window.  The window

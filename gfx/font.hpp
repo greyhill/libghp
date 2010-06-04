@@ -19,7 +19,7 @@ namespace ghp {
 template<typename PIXELT>
 class glyph {
 public:
-  typedef PIXELT pixel_t;
+  typedef PIXELT pixel_type;
 
   /** \brief create a new glyph */
   glyph() {
@@ -46,35 +46,35 @@ public:
   }
 
   /** \brief pixel access */
-  inline color<pixel_t>& operator()(int x, int y) {
+  inline color<pixel_type>& operator()(int x, int y) {
     return texture_(x, y);
   }
   /** \brief pixel access */
-  inline const color<pixel_t>& operator()(int x, int y) const {
+  inline const color<pixel_type>& operator()(int x, int y) const {
     return texture_(x, y);
   }
   /** \brief pixel access */
-  inline color<pixel_t>& operator()(const vector<2, int> &v) {
+  inline color<pixel_type>& operator()(const vector<2, int> &v) {
     return texture_(v);
   }
   /** \brief pixel access */
-  inline const color<pixel_t>& operator()(const vector<2, int> &v) const {
+  inline const color<pixel_type>& operator()(const vector<2, int> &v) const {
     return texture_(v);
   }
   /** \brief pixel access */
-  inline color<pixel_t>& operator()(int i) {
+  inline color<pixel_type>& operator()(int i) {
     return texture_(i);
   }
   /** \brief pixel access */
-  inline const color<pixel_t>& operator()(int i) const {
+  inline const color<pixel_type>& operator()(int i) const {
     return texture_(i);
   }
   /** \brief pixel access */
-  inline color<pixel_t>& operator[](int i) {
+  inline color<pixel_type>& operator[](int i) {
     return texture_[i];
   }
   /** \brief pixel access */
-  inline const color<pixel_t>& operator[](int i) const {
+  inline const color<pixel_type>& operator[](int i) const {
     return texture_[i];
   }
 
@@ -96,7 +96,7 @@ public:
   inline void set_min(const vector<2, int> &v) { min_ = v; }
 
 private:
-  texture<pixel_t> texture_;
+  texture<pixel_type> texture_;
   vector<2, int> min_;
   vector<2, int> max_;
   int advance_;
@@ -110,8 +110,8 @@ private:
 template<typename PIXELT, typename K=char>
 class font {
 public:
-  typedef PIXELT pixel_t;
-  typedef glyph<pixel_t> glyph_t;
+  typedef PIXELT pixel_type;
+  typedef glyph<pixel_type> glyph_type;
 
   /** \brief create a new font */
   font() {
