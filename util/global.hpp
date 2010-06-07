@@ -2,6 +2,7 @@
 #define _GHP_UTIL_GLOBAL_HPP_
 
 #include <boost/scoped_ptr.hpp>
+#include <boost/thread/thread.hpp>
 
 namespace ghp {
 
