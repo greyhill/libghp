@@ -284,6 +284,32 @@ public:
   inline void operator()() {
     fftw_type_traits<fftw_type>::execute_plan(plan_);
   }
+  /** \brief perform the DFT operation.  can be called multiple
+    times; each time operates on the same input and output vectors,
+    but you _can_ change their contents in-between runs */
+  inline void execute() {
+    (*this)();
+  }
+
+  /** \brief perform the DFT operation on a new set of arrays.
+   the operation must be identical in every way to the one set up
+   originally, _including whether or not the input and output
+   parameters are SIMD-aligned_.
+   \tparam IN - input type.  Must be conceptually like an array, with
+      linear memory arrangement: &in[0] should point to the beginning
+      of the array.  For best performance, use a container utilizing the 
+      simd_alloc allocator above.
+   \tparam OUT - output type.  Same requirements as input.
+   \param in - input
+   \param out - output
+  */
+  template<typename IN, typename OUT>
+  inline void unsafe_execute(const T &in, T &out) {
+    fftw_type* in_ptr = reinterpret_cast<fftw_type*>(
+      &const_cast<IN&>(in)[0]);
+    fftw_type* out_ptr = reinterpret_cast<fftw_type*>(&out[0]);
+    fftw_execute_dft(plan_, in_ptr, out_ptr);
+  }
 
 private:
   plan_type plan_;
