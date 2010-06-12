@@ -1,15 +1,18 @@
 #ifndef _GHP_MATH_FFTW_HPP_
 #define _GHP_MATH_FFTW_HPP_
 
+#include "../util.hpp"
+
 #include <boost/thread.hpp>
 
 #include <fftw3.h>
 
 #include <algorithm>
 #include <complex>
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
 #include <map>
-
-#include <stdlib.h>
 
 namespace fftw {
 
@@ -34,7 +37,7 @@ namespace fftw {
   the User Allocator concept from Boost's memory pool library
  */
 template<typename T>
-class fftw_alloc {
+class simd_alloc {
 public:
   typedef T value_type;
   typedef value_type* pointer;
@@ -46,14 +49,14 @@ public:
 
   template<typename U>
   struct rebind {
-    typedef fftw_alloc<U> other;
+    typedef simd_alloc<U> other;
   };
 
-  inline fftw_alloc() { }
-  inline ~fftw_alloc() { }
-  inline fftw_alloc(const fftw_alloc&) { }
+  inline simd_alloc() { }
+  inline ~simd_alloc() { }
+  inline simd_alloc(const simd_alloc&) { }
   template<typename U>
-  inline fftw_alloc(fftw_alloc<U> const&) { }
+  inline simd_alloc(simd_alloc<U> const&) { }
 
   inline pointer address(reference r) { return &r; }
   inline const_pointer address(const_reference r) { return &r; }
@@ -72,8 +75,8 @@ public:
 
   inline void construct(pointer p, const T& t) { new(p) T(t); }
   inline void destroy(pointer p) { p->~T(); }
-  inline bool operator==(const fftw_alloc&) { return true; }
-  inline bool operator!=(const fftw_alloc&) { return false; }
+  inline bool operator==(const simd_alloc&) { return true; }
+  inline bool operator!=(const simd_alloc&) { return false; }
 
   inline static char* malloc(size_type n) { 
     return reinterpret_cast<char*>(fftw_malloc(n)); 
@@ -201,8 +204,7 @@ template<int N> boost::mutex fftw_type_traits<fftwl_complex, N>::mutex_;
 template<typename T>
 class plan {
 public:
-  typedef T cpp_type;
-  typedef typename cpp2fftw<T>::value_type fftw_type;
+  typedef T fftw_type;
   typedef typename fftw_type_traits<fftw_type>::plan_type plan_type;
   
   /**
@@ -210,7 +212,7 @@ public:
     \tparam IN - input type.  Must be conceptually like an array, with
       linear memory arrangement: &in[0] should point to the beginning
       of the array.  For best performance, use a container utilizing the 
-      fftw_alloc allocator above.
+      simd_alloc allocator above.
     \tparam OUT - output type.  Same requirements as input.
     \tparam S - size array type.  Must be [.]-accessible.
     \param dim - dimension of DFT, i.e. 1 is 1-dimensional
@@ -220,44 +222,55 @@ public:
     \param sizes - sizes of each dimension
    */
   template<typename IN, typename OUT, typename S>
-  inline plan(std::size_t dim, bool forward, IN in, OUT out,
-      S sizes) {
+  inline plan(std::size_t dim, bool forward, const IN &in, OUT &out,
+      S sizes)
+        : plan_(NULL) {
     int dims[dim];
     for(int i=0; i<dim; ++i) dims[i] = sizes[i];
-    plan_ = fftw_type_traits<fftw_type>::create_plan(
-      dim,
-      dims,
-      in,
-      out,
-      forward ? 1 : 0,
-      0);
-    if(plan_ == NULL) {
-      throw std::runtime_error("couldn't create plan in FFTW");
+    fftw_type* in_ptr = reinterpret_cast<fftw_type*>(
+      &const_cast<IN&>(in)[0]);
+    fftw_type* out_ptr = reinterpret_cast<fftw_type*>(&out[0]);
+    if(in_ptr == out_ptr) {
+      // in-place transform: first check if we can do an in-place
+      // transform just using wisdom.  this would be non-destructive
+      // of the input data
+      plan_ = fftw_type_traits<fftw_type>::create_plan(
+        dim,
+        dims,
+        in_ptr,
+        out_ptr,
+        forward ? FFTW_FORWARD : FFTW_BACKWARD,
+        FFTW_WISDOM_ONLY);
+      if(plan_ == NULL) {
+        // plan could not be created purely from wisdom. we need to
+        // save the input data, create the plan, then restore the
+        // input data
+        std::size_t num_samples = 1;
+        for(std::size_t i=0; i<dim; ++i) num_samples *= dims[i];
+        fftw_type buffer[num_samples];
+        memcpy(buffer, in_ptr, sizeof(fftw_type)*num_samples);
+        plan_ = fftw_type_traits<fftw_type>::create_plan(
+          dim,
+          dims,
+          in_ptr,
+          out_ptr,
+          forward ? FFTW_FORWARD : FFTW_BACKWARD,
+          0);
+        memcpy(in_ptr, buffer, sizeof(fftw_type)*num_samples);
+      }
+    } else {
+      // out-of-place transform; simple create the plan as normal
+      plan_ = fftw_type_traits<fftw_type>::create_plan(
+        dim,
+        dims,
+        in_ptr,
+        out_ptr,
+        forward ? FFTW_FORWARD : FFTW_BACKWARD,
+        0);
     }
-  }
-  /**
-    \brief plan a one-dimensional DFT
-    \tparam IN - input type.  Must be conceptually like an array, with
-      linear memory arrangement: &in[0] should point to the beginning
-      of the array.  For best performance, use a container utilizing the 
-      fftw_alloc allocator above.  Also, must have .size() method.
-    \tparam OUT - output type.  Same requirements as input.
-    \tparam S - size array type.  Must be [.]-accessible.
-    \param forward - true for DFT, false for IDFT
-    \param in - input
-    \param output - output
-   */
-  template<typename IN, typename OUT>
-  inline plan(bool forward, IN in, OUT out) {
-    int size = in.size();
-    plan_ = fftw_type_traits<fftw_type>::create_plan(
-      1,
-      &size,
-      in,
-      out,
-      forward ? 1 : 0,
-      0);
     if(plan_ == NULL) {
+      // if the plan is still NULL, there was a real algorithmic
+      // failure
       throw std::runtime_error("couldn't create plan in FFTW");
     }
   }
@@ -275,6 +288,102 @@ public:
 private:
   plan_type plan_;
 };
+
+/*
+  here are a number of MATLAB-like convenience functions.  
+*/
+
+/* don't use this function */
+template<typename IN, typename OUT, bool FORWARD>
+inline void general_fft_(const IN &in, OUT &out, std::size_t in_size, 
+    std::size_t out_size) {
+  typedef typename ghp::container_traits<IN>::value_type cpp_type;
+  typedef typename cpp_type::value_type real_type;
+  typedef typename cpp2fftw<cpp_type>::value_type fftw_type;
+  /* In the case where input and output sizes differ:
+    1) in == out: Perform an [i]fft as normal
+    2) in < out: Copy in to out w/ zero-padding and fft out in-place
+    3) in > out: Perform an [i]fft from in to out, truncating elements of
+      in. */
+  if(in_size < out_size) {
+    // TODO maybe replace with a memset and memcpy?
+    for(std::size_t i=0; i<in_size; ++i) {
+      out[i] = in[i];
+    }
+    for(std::size_t i=in_size; i<out_size; ++i) {
+      out[i] = 0;
+    }
+    general_fft_<IN, OUT, FORWARD>(out, out, out_size, out_size);
+  } else {
+    std::size_t sizes[] = { in_size, out_size };
+    plan<fftw_type> plan_fct(
+      1,
+      FORWARD,
+      in,
+      out,
+      sizes
+    );
+    plan_fct();
+    // FFTW doesn't scale values on ifft.  We do that here.
+    if(!FORWARD) {
+      real_type den = real_type(1.0) / out_size;
+      for(int i=0; i<out_size; ++i) out[i] *= den;
+    }
+  }
+}
+
+/** \brief compute a 1D DFT 
+  \tparam IN - input.  Must be indexable with linear memory and
+    have .size() method
+  \tparam OUT - output.  Same properties as input.
+  \param in - input data
+  \param output - output data.  Must be sized appropriately.  To
+    upsample the DFT, use an output vector larger than the 
+    input vector */
+template<typename IN, typename OUT>
+inline void fft(const IN &in, OUT &out) {
+  general_fft_<IN, OUT, true>(in, out, in.size(), out.size());
+}
+/** \brief compute a 1D inverse DFT 
+  \tparam IN - input.  Must be indexable with linear memory and
+    have .size() method
+  \tparam OUT - output.  Same properties as input.
+  \param in - input data
+  \param output - output data.  Must be sized appropriately.  To
+    upsample the IDFT, use an output vector larger than the 
+    input vector */
+template<typename IN, typename OUT>
+inline void ifft(const IN &in, OUT &out) {
+  general_fft_<IN, OUT, false>(in, out, in.size(), out.size());
+}
+/** \brief compute a 1D DFT 
+  \tparam IN - input.  Must be indexable with linear memory.
+  \tparam OUT - output.  Same properties as input.
+  \param in - input data
+  \param output - output data.  Must be sized appropriately.  To
+    upsample the DFT, use an output vector larger than the 
+    input vector
+  \param in_size - size of input vector
+  \param out_size - size of output vector */
+template<typename IN, typename OUT>
+inline void fft(const IN &in, OUT &out, std::size_t in_size,
+    std::size_t out_size) {
+  general_fft_<IN, OUT, true>(in, out, in_size, out_size);
+}
+/** \brief compute a 1D inverse DFT 
+  \tparam IN - input.  Must be indexable with linear memory.
+  \tparam OUT - output.  Same properties as input.
+  \param in - input data
+  \param output - output data.  Must be sized appropriately.  To
+    upsample the IDFT, use an output vector larger than the 
+    input vector
+  \param in_size - size of input vector
+  \param out_size - size of output vector */
+template<typename IN, typename OUT>
+inline void ifft(const IN &in, OUT &out, std::size_t in_size,
+    std::size_t out_size) {
+  general_fft_<IN, OUT, false>(in, out, in_size, out_size);
+}
 
 }
 
