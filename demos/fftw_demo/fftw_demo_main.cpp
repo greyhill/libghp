@@ -15,17 +15,20 @@ inline void print_vec(T &t, std::size_t size) {
 int main(int argc, char *argv[]) {
   std::vector<std::complex<double> > vec;
   std::vector<std::complex<double> > vec2;
-  vec.resize(8); vec2.resize(8);
-  for(int i=0; i<vec.size(); ++i) vec[i] = std::complex<double>(i, 0);
-  for(int i=0; i<vec2.size(); ++i) vec2[i] = std::complex<double>(0, 0);
+  std::vector<std::complex<double> > vec3;
+  vec.resize(3); vec2.resize(3);
+  vec3.resize(5);
+  vec[0] = 1; vec[1] = 1; vec[2] = 1;
+  vec2[0] = 1; vec2[1] = 2; vec2[2] = 1;
 
   print_vec(vec, vec.size());
   print_vec(vec2, vec2.size());
+  print_vec(vec3, vec3.size());
   std::cout << std::endl;
 
-  fftw::fft(vec, vec);
-  fftw::ifft(vec, vec);
+  fftw::conv(vec, vec2, vec3);
   print_vec(vec, vec.size());
   print_vec(vec2, vec2.size());
+  print_vec(vec3, vec3.size());
 }
 
