@@ -13,6 +13,7 @@
 #include <cstring>
 #include <iostream>
 #include <map>
+#include <vector>
 
 namespace fftw {
 
@@ -409,6 +410,30 @@ template<typename IN, typename OUT>
 inline void ifft(const IN &in, OUT &out, std::size_t in_size,
     std::size_t out_size) {
   general_fft_<IN, OUT, false>(in, out, in_size, out_size);
+}
+
+template<typename IN1, typename IN2, typename OUT>
+inline void conv(const IN1 &in1, const IN2 &in2, OUT &out) {
+  conv(in1, in2, out, in1.size(), in2.size());
+}
+template<typename IN1, typename IN2, typename OUT>
+inline void conv(const IN1 &in1, const IN2 &in2, OUT &out, 
+    std::size_t in1_size, std::size_t in2_size) {
+  typedef typename ghp::container_traits<IN1>::value_type in1_value_type;
+  typedef typename ghp::container_traits<IN2>::value_type in2_value_type;
+  typedef typename cpp2fftw<in1_value_type>::value_type fftw_type_1;
+  typedef typename ccp2fftw<in2_value_type>::value_type fftw_type_2;
+
+  const std::size_t filt_size = in1_size + in2_size - 1;
+  std::vector<fftw_type_1, simd_alloc<fftw_type_1> > filt1(filt_size);
+  std::vector<fftw_type_2, simd_alloc<fftw_type_2> > filt2(filt_size);
+
+  memcpy(&filt1[0], &in1[0], sizeof(fftw_type_1)*in1_size);
+  fft(in2, filt2, in2_size, filt_size);
+  for(std::size_t i=0; i<filt_size; ++i) {
+    out[i] = filt1[i] * in2[i];
+  }
+  ifft(out, out, filt_size, filt_size);
 }
 
 }
