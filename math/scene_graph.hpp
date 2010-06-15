@@ -36,8 +36,8 @@ public:
     (*this) = g;
   }
   ~scene_graph() {
-    for(std::set<scene_graph>::const_iterator it=children_.begin();
-        it != children.end(); ++it) {
+    for(typename std::set<scene_graph*>::const_iterator 
+        it=children_.begin(); it != children_.end(); ++it) {
       erase_child(**it);
     }
   }
@@ -47,7 +47,7 @@ public:
       \tparam SG - must have insert(vec_t, stable_rot_t, C)
       \param out - output scenegraph
     */
-  template<SG>
+  template<typename SG>
   inline void flatten(SG &out) const {
     // identity rotation and translation
     vector_t loc;
@@ -87,7 +87,7 @@ public:
   /** \brief remove and destroy a child */
   inline void erase_child(scene_graph &g) {
     children_.erase(&g);
-    delete g;
+    delete &g;
   }
 
   /** \brief deep copy */
@@ -97,7 +97,7 @@ public:
     rot_ = g.rot_;
     contents_ = g.contents_;
     children_.erase(children_.begin(), children_.end());
-    for(std::set< scene_graph<N, T2, C> >::const_iterator it 
+    for(typename std::set< scene_graph<N, T2, C> >::const_iterator it 
         = g.contents_.begin(); it != g.contents_.end(); ++it) {
       scene_graph *g = new scene_graph();
       *g = *it;
@@ -107,7 +107,7 @@ public:
   }
 
 private:
-  template<SG>
+  template<typename SG>
   void flatten_helper_(SG &out, 
       const vector_t &rloc, 
       const stable_rot_t &rrot,
@@ -115,17 +115,17 @@ private:
     vector_t cur_loc(rloc);
     cur_loc += (rrot * loc_);
     matrix_rot_t cur_rot_matrix(rrot_matrix);
-    cur_rot_marix *= matrix_rot_t(rot_);
+    cur_rot_matrix *= matrix_rot_t(rot_);
     stable_rot_t cur_rot(rrot);
     cur_rot *= rot_;
     // add content
-    for(std::set<C*>::const_iterator it=contents_.begin(); 
-        it != contents.end(); ++it) {
+    for(typename std::set<C*>::const_iterator 
+        it = contents_.begin(); it != contents.end(); ++it) {
       out.insert(*it, cur_loc, cur_rot);
     }
     // add children
-    for(std::set<scene_graph*>::const_iterator it = children_.begin();
-        it != children_.end(); ++it) {
+    for(typename std::set<scene_graph*>::const_iterator 
+        it = children_.begin(); it != children_.end(); ++it) {
       (*it)->flatten_helper_(out, cur_loc, cur_rot, cur_rot_matrix);
     }
   }

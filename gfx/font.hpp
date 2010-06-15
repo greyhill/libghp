@@ -125,11 +125,11 @@ public:
 
   /** \brief mutable glyph access.  If a glyph is requested does
     not exist, it is created, added to the font, and returned.  */
-  inline glyph_t& operator()(const K &k) {
-    typename std::map<K, boost::shared_ptr<glyph_t> >::iterator 
+  inline glyph_type& operator()(const K &k) {
+    typename std::map<K, boost::shared_ptr<glyph_type> >::iterator 
         it = glyphs_.find(k);
     if(it == glyphs_.end()) {
-      boost::shared_ptr<glyph_t> new_glyph(new glyph_t());
+      boost::shared_ptr<glyph_type> new_glyph(new glyph_type());
       glyphs_[k] = new_glyph;
       return *new_glyph;
     } else {
@@ -138,8 +138,8 @@ public:
   }
   /** \brief immutable glyph access.  If a glyph requested does not
     exist yet, an exception is thrown. */
-  const glyph_t& operator()(const K &k) const {
-    typename std::map<K, boost::shared_ptr<glyph_t> >::const_iterator 
+  const glyph_type& operator()(const K &k) const {
+    typename std::map<K, boost::shared_ptr<glyph_type> >::const_iterator 
         it = glyphs_.find(k);
     if(it == glyphs_.end()) {
       throw std::runtime_error("font doesn't contain that glyph!");
@@ -149,12 +149,12 @@ public:
   }
   /** \brief mutable glyph access.  If a glyph is requested does
     not exist, it is created, added to the font, and returned.  */
-  inline glyph_t& operator[](const K &k) {
+  inline glyph_type& operator[](const K &k) {
     return (*this)(k);
   }
   /** \brief immutable glyph access.  If a glyph requested does not
     exist yet, an exception is thrown. */
-  inline const glyph_t& operator[](const K &k) const {
+  inline const glyph_type& operator[](const K &k) const {
     return (*this)(k);
   }
 
@@ -176,7 +176,7 @@ public:
   inline void set_line_skip(int i) { line_skip_ = i; }
 
 private:
-  std::map<K, boost::shared_ptr<glyph_t> > glyphs_;
+  std::map<K, boost::shared_ptr<glyph_type> > glyphs_;
   int height_;
   int ascend_;
   int descent_;

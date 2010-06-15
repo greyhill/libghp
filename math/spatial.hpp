@@ -21,6 +21,17 @@ template<typename T> struct spatial_traits<2, T> {
   typedef rot_matrix<3, T> matrix_trans_t;
 };
 
+// constructor/conversion glue
+template<typename T>
+struct delegated_assignment<rot_matrix<2, T>, rot_complex<T> > {
+  delegated_assignment(rot_matrix<2, T> &m, rot_complex<T> &c)
+      : m_(m), c_(c) { }
+  void operator()() {
+  }
+  rot_matrix<2, T> &m_;
+  rot_complex<T> &c_;
+}
+
 }
 
 #endif

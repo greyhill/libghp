@@ -28,6 +28,12 @@ public:
   rot_matrix(const rot_matrix &m) {
     for(int i=0; i<N*N; ++i) (*this)(i) = m(i);
   }
+  /** \brief for constructing from other types */
+  template<typename F>
+  rot_matrix(const F &f) {
+    delegated_assignment<matrix<N, T>, F> ass(*this, f);
+    ctor();
+  }
   ~rot_matrix() {
   }
 
@@ -161,6 +167,19 @@ public:
         out(r,c) = cell;
       }
     }
+  }
+  template<typename T2>
+  inline rot_matrix& operator=(const rot_matrix<N, T2> &m) {
+    for(int i=0; i<N*N; ++i) {
+      data_[i] = m.data_[i];
+    }
+    return *this;
+  }
+  template<typename F>
+  inline rot_matrix& operator=(const F &f) {
+    delegated_assignment<rot_matrix<N, T>, F> ctor(*this, f);
+    ctor();
+    return *this;
   }
 
 private:
