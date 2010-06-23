@@ -26,6 +26,16 @@ namespace ghp {
     Then the user need only implement specializations of 
     ghp::delegated_assignment to add conversions to A nonintrusively */
 template<typename A, typename B> struct delegated_assignment { };
+template<typename T> struct delegated_assignment<T, T> {
+  delegated_assignment(T &lhs, T &rhs) 
+      : lhs_(lhs), rhs_(rhs) {
+  }
+  void operator()() {
+    lhs_ = rhs_;
+  }
+  T &lhs_;
+  T &rhs_;
+};
 
 }
 

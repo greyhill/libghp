@@ -2,8 +2,10 @@
 #define _GHP_MATH_SPATIAL_HPP_
 
 #include "vector.hpp"
-#include "rot_matrix.hpp"
+#include "rot_angle.hpp"
 #include "rot_complex.hpp"
+#include "rot_euler.hpp"
+#include "rot_matrix.hpp"
 #include "rot_quat.hpp"
 
 #include <complex>
@@ -21,7 +23,7 @@ template<typename T> struct spatial_traits<2, T> {
   typedef rot_matrix<3, T> matrix_trans_t;
 };
 
-// constructor/conversion glue
+// conversion glue
 template<typename T>
 struct delegated_assignment<rot_matrix<2, T>, rot_complex<T> > {
   delegated_assignment(rot_matrix<2, T> &m, rot_complex<T> &c)
