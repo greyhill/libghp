@@ -2,7 +2,6 @@
 #define _GHP_MATH_SPATIAL_HPP_
 
 #include "vector.hpp"
-#include "rot_angle.hpp"
 #include "rot_complex.hpp"
 #include "rot_euler.hpp"
 #include "rot_matrix.hpp"
@@ -32,7 +31,7 @@ struct delegated_assignment<rot_matrix<2, T>, rot_complex<T> > {
   }
   rot_matrix<2, T> &m_;
   rot_complex<T> &c_;
-}
+};
 
 }
 

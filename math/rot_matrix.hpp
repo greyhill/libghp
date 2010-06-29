@@ -31,8 +31,8 @@ public:
   /** \brief for constructing from other types */
   template<typename F>
   rot_matrix(const F &f) {
-    delegated_assignment<matrix<N, T>, F> ass(*this, f);
-    ctor();
+    delegated_assignment<rot_matrix<N, T>, F> ass(*this, f);
+    ass();
   }
   ~rot_matrix() {
   }

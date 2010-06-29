@@ -4,7 +4,6 @@
 #include "math/interpolate.hpp"
 #include "math/mesh.hpp"
 #include "math/mesh_util.hpp"
-#include "math/rot_angle.hpp"
 #include "math/rot_complex.hpp"
 #include "math/rot_euler.hpp"
 #include "math/rot_matrix.hpp"

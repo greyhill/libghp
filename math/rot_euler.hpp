@@ -61,16 +61,15 @@ public:
     angles_[2] = roll;
   }
   template<typename F> inline rot_euler(const F &f) {
-    delegated_assignment<rot_euler<3, F> copy(*this, f);
+    delegated_assignment<rot_euler<3, T>, F> copy(*this, f);
     copy();
-    return *this;
   }
   inline ~rot_euler() {
   }
 
   template<typename T2>
   inline rot_euler operator=(const rot_euler<3, T2> &r) {
-    for(int i=0; i<N; ++i) angles_[i] = r.angles_[i];
+    for(int i=0; i<3; ++i) angles_[i] = r.angles_[i];
     return *this;
   }
   template<typename F>
