@@ -47,7 +47,7 @@ namespace ghp {
   only on Windows and UNIX-like operating systems right now.
  */
 template<int N=0>
-class dynamic_library : public boost::noncopyable {
+class dynamic_library_ : public boost::noncopyable {
 public:
   /** \brief create a new dynamic_library
     \param path - path to, or name of, the library to be loaded.  The
@@ -55,13 +55,13 @@ public:
       fashion.
     \throws std::runtime_error on errors
     */
-  dynamic_library(const std::string &path) 
+  dynamic_library_(const std::string &path) 
       : library_(load_library_(path)) {
     if(library_ == NULL) {
       throw std::runtime_error("couldn't load library");
     }
   }
-  ~dynamic_library() {
+  ~dynamic_library_() {
     close_library_(library_);
   }
 
@@ -91,6 +91,9 @@ private:
 
   library_type library_;
 };
+
+typedef dynamic_library_<0> dynamic_library;
+
 #endif
 
 }
