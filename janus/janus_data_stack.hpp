@@ -55,7 +55,7 @@ private:
   inline void push_by_size_(STACK &stack, const T &t) {
     typedef int_by_size<SIZE>::unsigned_type int_type;
     int_type buffer = *reinterpret_cast<const int_type*>(&t);
-    // TODO: if little endian, flip byte order
+    buffer = hton(buffer);
     for(int i=SIZE-1; i>=0; --i) {
       uint8_t byte = static_cast<uint8_t>((buffer & (0xFF << i)) >> i);
       stack.push_back(byte);
@@ -76,7 +76,7 @@ private:
       buffer |= (stack.back() << i);
       stack.pop_back();
     }
-    return *reinterpret_cast<T*>(&buffer);
+    return ntoh(*reinterpret_cast<T*>(&buffer));
   }
 };
 
