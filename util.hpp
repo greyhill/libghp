@@ -5,6 +5,7 @@
 #include "util/dynamic_library.hpp"
 #include "util/delegated_assignment.hpp"
 #include "util/global.hpp"
+#include "util/int_by_size.hpp"
 
 #endif
 
