@@ -6,10 +6,10 @@
 namespace ghp {
 
 template<typename T>
-class checked_buffer {
+class janus_assembly {
 public:
   janus_assembly();
-  janus_assembly(const std::string &path);
+  janus_assembly(const janus_assembly &j);
   ~janus_assembly();
 
 private:

@@ -17,8 +17,8 @@ public:
   }
   template<typename F> 
   inline rot_euler(const F &f) {
-    delegated_assignment<rot_euler<2, T>, F> copy(*this, f);
-    copy();
+    delegated_assignment<rot_euler<2, T>, F> copy;
+    copy(*this, f);
   }
   inline ~rot_euler() {
   }
@@ -30,8 +30,8 @@ public:
   }
   template<typename F> 
   inline rot_euler& operator=(const F &f) {
-    delegated_assignment<rot_euler<2, T>, F> copy(*this, f);
-    copy();
+    delegated_assignment<rot_euler<2, T>, F> copy;
+    copy(*this, f);
     return *this;
   }
 
@@ -61,8 +61,8 @@ public:
     angles_[2] = roll;
   }
   template<typename F> inline rot_euler(const F &f) {
-    delegated_assignment<rot_euler<3, T>, F> copy(*this, f);
-    copy();
+    delegated_assignment<rot_euler<3, T>, F> copy;
+    copy(*this, f);
   }
   inline ~rot_euler() {
   }
@@ -74,8 +74,8 @@ public:
   }
   template<typename F>
   inline rot_euler& operator=(const F &f) {
-    delegated_assignment<rot_euler<3, T>, F> copy(*this, f);
-    copy();
+    delegated_assignment<rot_euler<3, T>, F> copy;
+    copy(*this, f);
     return *this;
   }
 

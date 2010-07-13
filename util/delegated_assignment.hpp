@@ -12,14 +12,14 @@ namespace ghp {
 
     template<typename T>
     A(const T &t) {
-      ghp::delegated_assignment<A, T> ctor(*this, t);
-      ctor();
+      ghp::delegated_assignment<A, T> ctor;
+      ctor(*this, t);
     }
 
     template<typename T>
     A& operator=(const T &t) {
-      ghp::delegated_assignment<A, T> ctor(*this, t);
-      ctor();
+      ghp::delegated_assignment<A, T> ctor;
+      ctor(*this, t);
       return *this;
     }
 
@@ -27,14 +27,9 @@ namespace ghp {
     ghp::delegated_assignment to add conversions to A nonintrusively */
 template<typename A, typename B> struct delegated_assignment { };
 template<typename T> struct delegated_assignment<T, T> {
-  delegated_assignment(T &lhs, T &rhs) 
-      : lhs_(lhs), rhs_(rhs) {
+  inline void operator()(T &lhs, T &rhs) {
+    lhs = rhs;
   }
-  void operator()() {
-    lhs_ = rhs_;
-  }
-  T &lhs_;
-  T &rhs_;
 };
 
 }
