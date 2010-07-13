@@ -25,6 +25,7 @@ template<typename T> struct spatial_traits<2, T> {
 };
 
 // conversion glue
+// 2D 
 template<typename T1, typename T2>
 struct delegated_assignment<rot_matrix<2, T1>, rot_complex<T2> > {
   inline void operator()(rot_matrix<2, T1> &m, rot_complex<T2> &c) {
