@@ -44,16 +44,31 @@ struct delegated_assignment<rot_complex<T1>, rot_matrix<2, T2> > {
 template<typename T1, typename T2>
 struct delegated_assignment<rot_euler<2, T1>, rot_complex<T2> > {
   inline void operator()(rot_euler<2, T1> &e, rot_complex<T2> &c) {
-    T2 angle;
-    if(std::abs(c.real()) < std::numeric_limits<T2>::epsilon()) {
-      angle = M_PI / 2.0;
-    } else {
-      angle = std::atan(c.imag() / c.real());
-    }
-    if(c.real() < 0) {
-      angle += M_PI;
-    }
-    e.angle() = angle;
+    e.angle() = std::atan2(c.imag(), c.real());
+  }
+};
+template<typename T1, typename T2>
+struct delegated_assignment<rot_complex<T1>, rot_euler<2, T2> > {
+  inline void operator()(rot_complex<T1> &c, rot_euler<2, T2> &e) {
+    c.real() = std::cos(e.angle());
+    c.imag() = std::sin(e.angle());
+  }
+};
+template<typename T1, typename T2>
+struct delegated_assignment<rot_euler<T1>, rot_matrix<2, T2> > {
+  inline void operator()(rot_euler<T1> &e, rot_matrix<2, T2> &m) {
+    e.rotation() = std::atan2(m(1,0), m(0,0));
+  }
+};
+template<typename T1, typename T2>
+struct delegated_assignment<rot_matrix<2, T1>, rot_euler<T2> > {
+  inline void operator()(rot_matrix<2, T1> &m, rot_euler<T2> &e) {
+    const T1 c = std::cos(e.rotation());
+    const T1 s = std::sin(e.rotation());
+    m(0,0) = c;
+    m(1,0) = s;
+    m(0,1) = -s;
+    m(1,1) = c;
   }
 };
 
