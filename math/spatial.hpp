@@ -28,7 +28,7 @@ template<typename T> struct spatial_traits<2, T> {
 // 2D 
 template<typename T1, typename T2>
 struct delegated_assignment<rot_matrix<2, T1>, rot_complex<T2> > {
-  inline void operator()(rot_matrix<2, T1> &m, rot_complex<T2> &c) {
+  inline void operator()(rot_matrix<2, T1> &m, const rot_complex<T2> &c) {
     m(0, 0) = c.real();
     m(1, 0) = c.imag();
     m(0, 1) = -c.imag();
@@ -37,33 +37,33 @@ struct delegated_assignment<rot_matrix<2, T1>, rot_complex<T2> > {
 };
 template<typename T1, typename T2>
 struct delegated_assignment<rot_complex<T1>, rot_matrix<2, T2> > {
-  inline void operator()(rot_complex<T1> &c, rot_matrix<2, T2> &m) {
+  inline void operator()(rot_complex<T1> &c, const rot_matrix<2, T2> &m) {
     c.real() = m(0, 0);
     c.imag() = m(1, 0);
   }
 };
 template<typename T1, typename T2>
 struct delegated_assignment<rot_euler<2, T1>, rot_complex<T2> > {
-  inline void operator()(rot_euler<2, T1> &e, rot_complex<T2> &c) {
-    e.angle() = std::atan2(c.imag(), c.real());
+  inline void operator()(rot_euler<2, T1> &e, const rot_complex<T2> &c) {
+    e.rotation() = std::atan2(c.imag(), c.real());
   }
 };
 template<typename T1, typename T2>
 struct delegated_assignment<rot_complex<T1>, rot_euler<2, T2> > {
-  inline void operator()(rot_complex<T1> &c, rot_euler<2, T2> &e) {
-    c.real() = std::cos(e.angle());
-    c.imag() = std::sin(e.angle());
+  inline void operator()(rot_complex<T1> &c, const rot_euler<2, T2> &e) {
+    c.real() = std::cos(e.rotation());
+    c.imag() = std::sin(e.rotation());
   }
 };
 template<typename T1, typename T2>
-struct delegated_assignment<rot_euler<T1>, rot_matrix<2, T2> > {
-  inline void operator()(rot_euler<T1> &e, rot_matrix<2, T2> &m) {
+struct delegated_assignment<rot_euler<2, T1>, rot_matrix<2, T2> > {
+  inline void operator()(rot_euler<2, T1> &e, const rot_matrix<2, T2> &m) {
     e.rotation() = std::atan2(m(1,0), m(0,0));
   }
 };
 template<typename T1, typename T2>
-struct delegated_assignment<rot_matrix<2, T1>, rot_euler<T2> > {
-  inline void operator()(rot_matrix<2, T1> &m, rot_euler<T2> &e) {
+struct delegated_assignment<rot_matrix<2, T1>, rot_euler<2, T2> > {
+  inline void operator()(rot_matrix<2, T1> &m, const rot_euler<2, T2> &e) {
     const T1 c = std::cos(e.rotation());
     const T1 s = std::sin(e.rotation());
     m(0,0) = c;

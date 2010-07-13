@@ -1,6 +1,8 @@
 #ifndef _GHP_MATH_ROT_COMPLEX_HPP_
 #define _GHP_MATH_ROT_COMPLEX_HPP_
 
+#include "../util.hpp"
+
 namespace ghp {
 
 /**
@@ -25,8 +27,15 @@ public:
     data_[1] = c;
   }
   /** \brief copy constructor */
-  inline rot_complex(const rot_complex &c) {
+  template<typename T2>
+  inline rot_complex(const rot_complex<T2> &c) {
     for(int i=0; i<2; ++i) data_[i] = c.data_[i];
+  }
+  /** \brief extensible conversion via delegated_assignment */
+  template<typename F>
+  inline rot_complex(const F &f) {
+    delegated_assignment<rot_complex<T>, F> ctor;
+    ctor(*this, f);
   }
   inline ~rot_complex() {
   }
@@ -101,6 +110,13 @@ public:
   /** \brief ensure this remains a valid rotation */
   void normalize() {
     (*this) /= std::sqrt( real()*real() + imag()*imag() );
+  }
+
+  /** delegated_assignment */
+  template<typename F>
+  rot_complex& operator=(const F &f) {
+    delegated_assignment<rot_complex<T>, F> ctor;
+    ctor(*this, f);
   }
 
 private:

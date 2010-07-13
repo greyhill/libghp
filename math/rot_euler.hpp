@@ -15,6 +15,12 @@ public:
   inline rot_euler(const T &t) {
     angles_[0] = t;
   }
+  inline rot_euler(float f) {
+    angles_[0] = f;
+  }
+  inline rot_euler(double d) {
+    angles_[0] = d;
+  }
   template<typename F> 
   inline rot_euler(const F &f) {
     delegated_assignment<rot_euler<2, T>, F> copy;

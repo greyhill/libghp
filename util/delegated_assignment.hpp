@@ -27,7 +27,7 @@ namespace ghp {
     ghp::delegated_assignment to add conversions to A nonintrusively */
 template<typename A, typename B> struct delegated_assignment { };
 template<typename T> struct delegated_assignment<T, T> {
-  inline void operator()(T &lhs, T &rhs) {
+  inline void operator()(T &lhs, const T &rhs) {
     lhs = rhs;
   }
 };
