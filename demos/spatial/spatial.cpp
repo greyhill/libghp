@@ -7,9 +7,10 @@ int main(int argc, char *argv[]) {
   ghp::rot_matrix<2, float> m = e;
   ghp::rot_complex<float> c = m;
   m = c;
-  std::cout << e.rotation() << std::endl;
   e = m;
-  c = e;
+  std::cout << e.rotation() << std::endl;
+  m = e;
+  c = m;
   e = c;
   std::cout << e.rotation() << std::endl;
 }
