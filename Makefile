@@ -9,8 +9,8 @@ install:
 	(cp janus.hpp /usr/include/ghp)
 	(mkdir /usr/include/ghp/util && cp util/*.hpp /usr/include/ghp/util)
 	(cp util.hpp /usr/include/ghp)
-	(mkdir /usr/include/ghp/net && cp net/*.hpp /usr/include/ghp/net)
-	(cp net.hpp /usr/include/ghp)
+#	(mkdir /usr/include/ghp/net && cp net/*.hpp /usr/include/ghp/net)
+#	(cp net.hpp /usr/include/ghp)
 
 deinstall:
 	(rm -rf /usr/include/ghp)
