@@ -246,6 +246,10 @@ public:
         // plan could not be created purely from wisdom. we need to
         // save the input data, create the plan, then restore the
         // input data
+        //
+        // because this is an in-place transform, the input is not
+        // actually "const," so we're not breaking program semantics
+        // by casting away its constness and writing to it.
         std::size_t num_samples = 1;
         for(std::size_t i=0; i<dim; ++i) num_samples *= dims[i];
         fftw_type buffer[num_samples];
@@ -459,6 +463,70 @@ inline void conv(const IN1 &in1, const IN2 &in2, OUT &out,
 template<typename IN1, typename IN2, typename OUT>
 inline void conv(const IN1 &in1, const IN2 &in2, OUT &out) {
   conv(in1, in2, out, in1.size(), in2.size());
+}
+
+template<typename IN, typename OUT, typename S1, typename S2, typename S3>
+inline void general_fftn_helper_(
+    int N, int cur_dim, S1 cur_coord,
+    IN in, S2 in_size,
+    OUT out, S3 out_size) {
+}
+
+/* general multidimensional fft -- don't use this function.  more
+  useful comments are in the 1d version above, general_fft_ */
+template<typename IN, typename OUT, bool FORWARD, typename S1,
+    typename S2>
+inline void general_fftn_(int N, const IN &in, OUT &out, 
+    S1 in_sizes, S2 out_sizes, bool skip_size_check=false) {
+  typedef typename ghp::container_traits<IN>::value_type cpp_type;
+  typedef typename cpp:type::value_type real_type;
+  typedef typename cpp2fftw<cpp_type>::value_type fftw_type;
+  /* check dimensions for padding/truncating situations */
+  bool size_changed = false;
+  if(!skip_size_check) {
+    for(int i=0; i<N; ++i) {
+      if(in_sizes[i] != out_sizes[i]) {
+        size_changed = true;
+      }
+    }
+  }
+  if(size_changed) {
+    std::size_t out_addr[N];
+    for(int i=0; i<N; ++i) {
+      out_addr[i] = 0;
+    }
+    // we "project" the input data onto the output data (the analogy 
+    // works in 2d, gets weird in 3d), and copy it across with 
+    // truncation and zero padding as appropriate, then perform 
+    // an in-place transform on the output data.  because we're 
+    // dealing with N dimensions, this operation is a little hairy
+    // and we use the (execution) stack to help us keep track of
+    // all the dimensions.
+    general_fftn_helper_
+    general_fftn_<OUT, OUT, FORWARD>(N, out, out, out_sizes, out_sizes,
+        true);
+  } else {
+    /* no expansion/padding was performed; perform [i]fft as normal */
+    plan<fftw_type> plan_fct(
+        N,
+        FORWARD,
+        in,
+        out,
+        in_sizes
+    );
+    plan_fct();
+    /* FFTW doesn't scale values on ifft.  Do that here */
+    if(!FORWARD) {
+      int out_num_samples = 1;
+      for(int i=0; i<N; ++i) {
+        out_num_samples *= out_size[i];
+      }
+      real_type den = 1. / out_num_samples;
+      for(int i=0; i<out_num_samples; ++i) {
+        out[i] *= den;
+      }
+    }
+  }
 }
 
 }
