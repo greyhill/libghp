@@ -12,7 +12,6 @@
 #include "math/signum.hpp"
 #include "math/spatial.hpp"
 #include "math/spatial_common.hpp"
-#include "math/translation.hpp"
 #include "math/vector.hpp"
 #include "math/vertex.hpp"
 #include "math/vertex_aux.hpp"

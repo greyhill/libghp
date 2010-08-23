@@ -18,7 +18,6 @@ namespace ghp {
 // dimensional traits
 template<int N, typename T> struct spatial_traits { };
 template<typename T> struct spatial_traits<2, T> {
-  typedef 
 };
 
 // conversion glue

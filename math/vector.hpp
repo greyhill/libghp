@@ -113,6 +113,10 @@ private:
   T data_[N];
 };
 
+typedef vector<2, float> vector2f;
+typedef vector<3, float> vector3f;
+typedef vector<4, float> vector4f;
+
 template<int N, typename T>
 inline T inner_prod(const vector<N, T> &v1, const vector<N, T> &v2) {
   T result = 0;
