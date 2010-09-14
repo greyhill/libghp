@@ -318,7 +318,7 @@ private:
       throw std::runtime_error(SDL_GetError());
     }
     SDL_Surface *screen_ = SDL_SetVideoMode(width_, height_, 0, 
-        SDL_DOUBLEBUF | (fullscreen_ ? SDL_FULLSCREEN : 0));
+        SDL_OPENGL | SDL_DOUBLEBUF | (fullscreen_ ? SDL_FULLSCREEN : 0));
     if(screen_ == NULL) {
       throw std::runtime_error(SDL_GetError());
     }
