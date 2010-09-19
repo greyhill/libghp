@@ -15,28 +15,15 @@
 
 namespace cl {
 
-enum float_config {
-  /** denorms are supported */
-  DENORM = CL_FP_DENORM,
-  /** INF and NaNs are supported */ 
-  INF_NAN = CL_FP_INF_NAN,
-  /** round to zero rounding mode supported */
-  ROUND_TO_ZERO = CL_FP_ROUND_TO_NEAREST,
-  /** round to +ve and -ve infinity rounding modes supported */
-  ROUND_TO_INF = CL_FP_ROUND_TO_INF,
-  /** IEEE745-2008 fused multiply-add is supported */
-  FMA = CL_FP_FMA
-};
+template<int UNUSED> class platform_;
 
-enum cache_type {
-  NONE = CL_NONE,
-  READ_ONLY_CACHE = CL_READ_ONLY_CACHE,
-  READ_WRITE_CACHE = CL_READ_WRITE_CACHE
-};
-
-template<int UNUSED=0> class device_ {
+template<int UNUSED=0> class device_ : boost::noncopyable {
 public:
   inline ~device_() { }
+
+  inline cl_device_id device_id() const {
+    return id_;
+  }
 
   uint32_t address_bits() const {
   }
@@ -44,28 +31,62 @@ public:
   }
   bool compiler_available() const {
   }
-  float_config fp_config() const {
-  }
   bool little_endian() const {
   }
   const std::set<std::string>& extensions() const {
   }
   uint64_t global_mem_cache_size() const {
   }
-  cache_type global_mem_cache_type() const {
-  }
   uint64_t global_mem_cacheline_size() const {
   }
   uint64_t global_mem_size() const {
   }
-
-private:
-  device_(cl_device_id id) 
-      : id_(id) {
+  uint64_t local_mem_size() const {
+  }
+  uint32_t max_compute_units() const {
+  }
+  uint32_t max_constant_args() const {
+  }
+  uint64_t max_constant_buffer_size() const {
+  }
+  uint64_t max_mem_alloc_size() const {
+  }
+  std::size_t max_parameter_size() const {
+  }
+  std::size_t max_work_group_size() const {
+  }
+  uint32_t max_work_item_dimensions() const {
+  }
+  boost::shared_array<std::size_t> max_work_item_sizes() const {
+  }
+  std::string name() const {
+  }
+  const platform_<UNUSED>& platform() const {
+  }
+  std::string profile() const {
+  }
+  bool is_gpu() const {
+  }
+  bool is_cpu() const {
+  }
+  std::string vendor() const {
+  }
+  uint32_t vendor_id() const {
+  }
+  std::string device_version() const {
+  }
+  std::string driver_version() const {
   }
 
-  friend class plaform_<UNUSED>;
+private:
+  device_(cl_device_id id, platform_<UNUSED> *plat) 
+      : id_(id), parent_platform_(plat) {
+  }
+
   cl_device_id id_;
+  platform_<UNUSED> *parent_platform_;
+
+  friend class platform_<UNUSED>;
 };
 typedef device_<0> device;
 

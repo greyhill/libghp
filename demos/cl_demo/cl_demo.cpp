@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
     }
     std::cout << std::endl;
 
-    const std::list<cl::device>& devices = (*it)->devices();
+//    const std::list<cl::device>& devices = (*it)->devices();
   }
 }
 
