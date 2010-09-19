@@ -15,6 +15,20 @@
 
 namespace gl {
 
+/* if NDEBUG (the C assert library's debug macro) is defined,
+  error checking is disabled.  otherwise, throws exceptions
+  when a GL error occurs */
+#ifndef NDEBUG
+#define CHECKED_GL_CALL(x) { \
+  x; \
+  GLenum gl_err_ = glGetError(); \
+  if(gl_err_ != GL_NO_ERROR) { \
+    throw std::runtime_error(gluErrorString(gl_err_)); \
+  } \
+}
+#else
+#define CHECKED_GL_CALL(x) (x)
+
 /** \brief types of primitives that can be drawn by openGL */
 enum primitive_type {
   POINTS,
@@ -108,16 +122,16 @@ public:
     modifies OpenGL state, so is not threadsafe */
   inline void activate() {
     assert(data_ != NULL);
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glVertexPointer(
+    CHECKED_GL_CALL(glEnableClientState(GL_VERTEX_ARRAY));
+    CHECKED_GL_CALL(glVertexPointer(
         N,
         cpp2gl<T>::value,
         stride_,
-        ghp::generic_ptr_deref<T, PTR>()(data_) );
+        ghp::generic_ptr_deref<T, PTR>()(data_)));
   }
   /** \brief unsets this vertex buffer */
   inline void deactivate() {
-    glDisableClientState(GL_VERTEX_ARRAY);
+    CHECKED_GL_CALL(glDisableClientState(GL_VERTEX_ARRAY));
   }
   /** \brief reset the vertex_ptr's data pointer */
   template<typename A> inline void reset(A a) {
@@ -178,15 +192,15 @@ public:
     modifies OpenGL state, so is not threadsafe */
   inline void activate() {
     assert(data_ != NULL);
-    glEnableClientState(GL_NORMAL_ARRAY);
-    glNormalPointer(
+    GL_CHECKED_CALL(glEnableClientState(GL_NORMAL_ARRAY));
+    GL_CHECKED_CALL(glNormalPointer(
         cpp2gl<T>::value,
         stride_,
-        ghp::generic_ptr_deref<T, PTR>()(data_));
+        ghp::generic_ptr_deref<T, PTR>()(data_)));
   }
   /** \brief unsets this normal buffer */
   inline void deactivate() {
-    glDisableClientState(GL_NORMAL_ARRAY);
+    GL_CHECKED_CALL(glDisableClientState(GL_NORMAL_ARRAY));
   }
   /** \brief reset (change) the buffer's data pointer */
   template<typename A> inline void reset(A a) {
@@ -249,17 +263,17 @@ public:
     modifies OpenGL state, so it is not threadsafe */
   inline void activate() {
     assert(data_ != NULL);
-    glEnableClientState(GL_COLOR_ARRAY);
-    glNormalPointer(
+    GL_CHECKED_CALL(glEnableClientState(GL_COLOR_ARRAY));
+    GL_CHECKED_CALL(glNormalPointer(
         N,
         cpp2gl<T>::value,
         stride_,
-        ghp::generic_ptr_deref<T, PTR>()(data_));
+        ghp::generic_ptr_deref<T, PTR>()(data_)));
   }
   /** \brief unsets this vertex buffer.  this function modifies
     OpenGL state, so it is not threadsafe */
   inline void deactivate() {
-    glDisableClientState(GL_VERTEX_ARRAY);
+    GL_CHECKED_CALL(glDisableClientState(GL_VERTEX_ARRAY));
   }
   /** \brief reset the vertex_ptr's data pointer */
   template<typename A> inline void reset(A a) {
@@ -302,15 +316,15 @@ public:
   inline ~tex_coord_ptr() { }
   inline void activate() {
     assert(data_ != NULL);
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    glTexCoordPointer(
+    GL_CHECKED_CALL(glEnableClientState(GL_TEXTURE_COORD_ARRAY));
+    GL_CHECKED_CALL(glTexCoordPointer(
         N,
         cpp2gl<T>::value,
         stride_,
-        ghp::generic_ptr_deref<T, PTR>()(data_));
+        ghp::generic_ptr_deref<T, PTR>()(data_)));
   }
   inline void deactivate() {
-    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    GL_CHECKED_CALL(glDisableClientState(GL_TEXTURE_COORD_ARRAY));
   }
   template<typename A> inline void reset(A a) {
     data_ = reinterpret_cast<T*>(&a[0]);
@@ -336,6 +350,8 @@ private:
   PTR data_;
   std::size_t stride_;
 };
+
+#undef CHECKED_GL_CALL
 
 }
 
