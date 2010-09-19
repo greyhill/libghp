@@ -6,7 +6,6 @@
 #include <boost/noncopyable.hpp>
 #include <boost/shared_array.hpp>
 
-#include <cstdarg>
 #include <list>
 #include <set>
 #include <sstream>
@@ -194,6 +193,10 @@ public:
     mk_cl_device_extensions_methods.pl */
   #include "cl_device_extensions_methods"
 
+  inline cl_device_id id() const {
+    return id_;
+  }
+
 private:
   cl_device_id id_;
 };
@@ -202,12 +205,43 @@ typedef device_<0> device;
 template<int UNUSED>
 class context_ : boost::noncopyable {
 public:
-  context_(platform p, device d1, ...) { }
-  ~context_();
+  context_(platform p, device d)
+      : context_id_(NULL) {
+    cl_context_properties props[] = { CL_CONTEXT_PLATFORM, p.id(), NULL };
+    int err;
+    context_id_ = clCreateContext(props,
+        1,
+        reinterpret_cast<cl_device_id*>(&d),
+        NULL,
+        NULL,
+        &err);
+    if(err != CL_SUCCESS) 
+        throw std::runtime_error("error creating cl context");
+  }
+
+  template<typename ITER1, typename ITER2>
+  context_(platform p, ITER1 begin, ITER2 end) 
+      : context_id_(NULL) {
+    cl_context_properties props[] = { CL_CONTEXT_PLATFORM, p.id(), NULL };
+    std::vector<device> device_ids;
+    device_ids.insert(begin, end);
+    int err;
+    context_id_ = clCreateContext(props,
+        device_ids.size(),
+        reinterpret_cast<cl_device_id*>(&device_ids[0]),
+        NULL,
+        NULL,
+        &err);
+    if(err != CL_SUCCESS)
+        throw std::runtime_error("error creating cl context");
+  }
+
+  inline ~context_() {
+    clReleaseContext(context_id_);
+  }
 
 private:
-  platform platform_;
-  std::vector<device> devices_;
+  cl_context context_id_;
 };
 typedef context_<0> context;
 
