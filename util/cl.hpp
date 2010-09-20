@@ -3,9 +3,11 @@
 
 #include <cl.h>
 
+#include <boost/function.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/shared_array.hpp>
 
+#include <iostream>
 #include <list>
 #include <set>
 #include <sstream>
@@ -17,6 +19,7 @@ namespace cl {
 
 template<int UNUSED> class platform_;
 template<int UNUSED> class device_;
+template<int UNUSED> class context_;
 
 /* right now, all parameters return strings */
 template<cl_platform_info I> struct cl_platform_info_retval {
@@ -203,47 +206,192 @@ private:
 typedef device_<0> device;
 
 template<int UNUSED>
+class command_queue_ : boost::noncopyable {
+public:
+  inline ~command_queue_() {
+    clReleaseCommandQueue(id_);
+  }
+
+  /* will add profiling support later 
+  bool profiling_enabled() const {
+  }
+  void set_profiling_enabled(bool b) {
+  }*/
+
+  cl_command_queue id() const {
+    return id_;
+  }
+
+private:
+  command_queue_(cl_command_queue id)
+      : id_(id) {
+  }
+
+  cl_command_queue id_;
+
+  friend class context_<0>;
+};
+typedef command_queue_<0> command_queue;
+
+void context_errfun_(const char *errinfo, const void *pinfo,
+    std::size_t cb, void *user_data);
+
+void context_errfun_noop_(const std::string &err, const void *private_info,
+    std::size_t private_size) {
+  std::cerr << "OpenCL context error: " << err << std::endl;
+}
+
+template<int UNUSED>
 class context_ : boost::noncopyable {
 public:
+  typedef boost::function<void(const std::string&, const void*, std::size_t)>
+    error_function_type;
+
   context_(platform p, device d)
-      : context_id_(NULL) {
-    cl_context_properties props[] = { CL_CONTEXT_PLATFORM, p.id(), NULL };
-    int err;
-    context_id_ = clCreateContext(props,
-        1,
-        reinterpret_cast<cl_device_id*>(&d),
-        NULL,
-        NULL,
-        &err);
-    if(err != CL_SUCCESS) 
-        throw std::runtime_error("error creating cl context");
+      : context_id_(NULL),
+      error_function_(context_errfun_noop_) {
+    devices_.push_back(d);
+    init_(p);
   }
 
   template<typename ITER1, typename ITER2>
   context_(platform p, ITER1 begin, ITER2 end) 
-      : context_id_(NULL) {
+      : context_id_(NULL),
+      error_function_(context_errfun_noop_) {
     cl_context_properties props[] = { CL_CONTEXT_PLATFORM, p.id(), NULL };
-    std::vector<device> device_ids;
-    device_ids.insert(begin, end);
-    int err;
-    context_id_ = clCreateContext(props,
-        device_ids.size(),
-        reinterpret_cast<cl_device_id*>(&device_ids[0]),
-        NULL,
-        NULL,
-        &err);
-    if(err != CL_SUCCESS)
-        throw std::runtime_error("error creating cl context");
+    devices_.insert(begin, end);
+    init_(p);
   }
 
   inline ~context_() {
+    std::size_t num_devices = devices_.size();
+    for(uint32_t i=0; i<num_devices; ++i) {
+      delete command_queues_[i];
+    }
     clReleaseContext(context_id_);
   }
 
+  inline const error_function_type& error_function() const {
+    return error_function_;
+  }
+  inline error_function_type& error_function() {
+    return error_function_;
+  }
+
+  inline std::size_t num_devices() const {
+    return devices_.size();
+  }
+  inline device devices(int i) const {
+    return devices_[i];
+  }
+  inline command_queue& command_queues(int i) const {
+    return *command_queues_[i];
+  }
+
+  inline cl_context id() const {
+    return context_id_;
+  }
+  
 private:
+  void init_(platform p) {
+    /* setup context */
+    int err;
+    std::size_t num_devices = devices_.size();
+    cl_context_properties props[] = { CL_CONTEXT_PLATFORM, 
+        reinterpret_cast<cl_context_properties>(p.id()), 
+        0 };
+    context_id_ = clCreateContext(props,
+        num_devices,
+        reinterpret_cast<cl_device_id*>(&devices_[0]),
+        context_errfun_,
+        this,
+        &err);
+    if(err != CL_SUCCESS) 
+      throw std::runtime_error("error creating cl context");
+
+    /* setup command queues */
+    for(uint32_t i=0; i<num_devices; ++i) {
+      cl_command_queue q;
+      q = clCreateCommandQueue(context_id_,
+          devices_[i].id(),
+          NULL,
+          &err);
+      if(err != CL_SUCCESS) {
+        throw std::runtime_error("error creating cl command queue");
+      }
+      command_queues_.push_back(new command_queue(q));
+    }
+  }
+
   cl_context context_id_;
+  std::vector<device> devices_;
+  std::vector<command_queue*> command_queues_;
+  error_function_type error_function_;
 };
 typedef context_<0> context;
+
+void context_errfun_(const char *errinfo, const void *pinfo, 
+    std::size_t cb, void *user_data) {
+  class context_<0> *cptr = reinterpret_cast<class context_<0>*>(user_data);
+  cptr->error_function()(std::string(errinfo), pinfo, cb);
+}
+
+template<int UNUSED>
+class program_ : boost::noncopyable {
+public:
+  program_(const context &c, const std::string &source,
+    const std::string &args = "") 
+      : id_(NULL) {
+    init_(c, source, args);
+  }
+  ~program_() {
+    clReleaseProgram(id_);
+  }
+ 
+private:
+  inline void init_(const context &c, const std::string &source,
+      const std::string &args) {
+    int err;
+    const char *tmp = source.c_str();
+    id_ = clCreateProgramWithSource(c.id(),
+        1,
+        &tmp,
+        NULL,
+        &err);
+    if(err != CL_SUCCESS)
+      throw std::runtime_error("error creating cl program!");
+    err = clBuildProgram(id_,
+        0, // build for all devices
+        NULL,
+        args.c_str(),
+        NULL,
+        NULL);
+    if(err != CL_SUCCESS) {
+      switch(err) {
+        case CL_INVALID_PROGRAM:
+          throw std::runtime_error("cl: invalid program object");
+        case CL_INVALID_VALUE:
+          throw std::runtime_error("cl: invalid device config");
+        case CL_INVALID_DEVICE:
+          throw std::runtime_error("cl: invalid device");
+        case CL_INVALID_BUILD_OPTIONS:
+          throw std::runtime_error("cl: invalid build options");
+        case CL_INVALID_OPERATION:
+          throw std::runtime_error("cl: can't build for that device now");
+        case CL_COMPILER_NOT_AVAILABLE:
+          throw std::runtime_error("cl: compiler not available");
+        case CL_BUILD_PROGRAM_FAILURE:
+          throw std::runtime_error("cl: build program error");
+        case CL_OUT_OF_HOST_MEMORY:
+          throw std::runtime_error("cl: out of host memory");
+      }
+      throw std::runtime_error("error compiling cl program!");
+    }
+  }
+
+  cl_program id_;
+};
+typedef program_<0> program;
 
 }
 
