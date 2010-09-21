@@ -212,7 +212,7 @@ public:
     clReleaseCommandQueue(id_);
   }
 
-  /* will add profiling support later 
+  /* TODO will add profiling support later 
   bool profiling_enabled() const {
   }
   void set_profiling_enabled(bool b) {
@@ -341,19 +341,20 @@ class program_ : boost::noncopyable {
 public:
   program_(const context &c, const std::string &source,
     const std::string &args = "") 
-      : id_(NULL) {
-    init_(c, source, args);
+      : id_(NULL),
+      parent_context_(c) {
+    init_(source, args);
   }
   ~program_() {
     clReleaseProgram(id_);
   }
  
 private:
-  inline void init_(const context &c, const std::string &source,
+  inline void init_(const std::string &source,
       const std::string &args) {
     int err;
     const char *tmp = source.c_str();
-    id_ = clCreateProgramWithSource(c.id(),
+    id_ = clCreateProgramWithSource(parent_context_.id(),
         1,
         &tmp,
         NULL,
@@ -387,9 +388,17 @@ private:
       }
       throw std::runtime_error("error compiling cl program!");
     }
+
+    /* build all kernels */
+    uint32_t num_kernels;
+    err = clCreateKernelsInProgram(id_,
+        0,
+        NULL,
+        &num_kernels);
   }
 
   cl_program id_;
+  context &parent_context_;
 };
 typedef program_<0> program;
 
