@@ -1,5 +1,7 @@
 ifdef ATI
-CLINCLUDE=-I/usr/include/CL
+CLINCLUDE=-I${ATISTREAMSDKROOT}/include/CL \
+	-I${ATISTREAMSDKROOT}/include \
+	-L${ATISTREAMSDKROOT}/lib/x86
 else
 CLINCLUDE=-I/usr/include/nvidia-current \
 	-I/usr/include/nvidia-current/CL

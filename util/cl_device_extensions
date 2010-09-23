@@ -35,7 +35,8 @@ DEVICE_INFO_RETVAL( CL_DEVICE_MAX_WRITE_IMAGE_ARGS,           uint32_t      );
 DEVICE_INFO_RETVAL( CL_DEVICE_MEM_BASE_ADDR_ALIGN,            uint32_t      );
 DEVICE_INFO_RETVAL( CL_DEVICE_MIN_DATA_TYPE_ALIGN_SIZE,       uint32_t      );
 DEVICE_INFO_RETVAL( CL_DEVICE_NAME,                           std::string   );
-DEVICE_INFO_RETVAL( CL_DEVICE_PLATFORM,                       platform_<0>  );
+DEVICE_INFO_RETVAL( CL_DEVICE_PLATFORM,                       
+                                                           platform_ref_<0> );
 DEVICE_INFO_RETVAL( CL_DEVICE_PREFERRED_VECTOR_WIDTH_CHAR,    uint32_t      );
 DEVICE_INFO_RETVAL( CL_DEVICE_PREFERRED_VECTOR_WIDTH_SHORT,   uint32_t      );
 DEVICE_INFO_RETVAL( CL_DEVICE_PREFERRED_VECTOR_WIDTH_INT,     uint32_t      );

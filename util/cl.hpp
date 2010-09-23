@@ -22,7 +22,7 @@ template<int UNUSED> class device_ref_;
 template<int UNUSED> class context_ref_;
 template<int UNUSED> class event_ref_;
 template<int UNUSED> class command_queue_ref_;
-template<typename T> class buffer_ref;
+template<int UNUSED> class buffer_ref_;
 template<int UNUSED> class program_ref_;
 template<int UNUSED> class kernel_ref_;
 
@@ -31,6 +31,7 @@ typedef device_ref_<0> device_ref;
 typedef context_ref_<0> context_ref;
 typedef event_ref_<0> event_ref;
 typedef command_queue_ref_<0> command_queue_ref;
+typedef buffer_ref_<0> buffer_ref;
 typedef program_ref_<0> program_ref;
 typedef kernel_ref_<0> kernel_ref;
 
@@ -226,8 +227,26 @@ public:
       : id_(c.id_) {
     clRetainContext(c.id_);
   }
+  inline context_ref_(platform_ref platform, device_ref dev) 
+      : id_(NULL) {
+    int err;
+    cl_device_id device_id = dev.id();
+    cl_context_properties context_props[] = 
+        { CL_CONTEXT_PLATFORM, 
+        reinterpret_cast<cl_context_properties>(platform.id()), 
+        NULL };
+    id_ = clCreateContext(context_props,
+        1,
+        &device_id,
+        NULL,
+        NULL,
+        &err);
+    if(err != CL_SUCCESS) {
+      throw std::runtime_error("error creating CL context");
+    }
+  }
   inline ~context_ref_() {
-    clReleaseContext(c.id_);
+    clReleaseContext(id_);
   }
 
   inline context_ref_& operator=(const context_ref_ &r) {
@@ -242,63 +261,66 @@ public:
     return id_ == r.id_;
   }
 
+  inline cl_context id() const {
+    return id_;
+  }
+
 private:
   cl_context id_;
 };
 
 template<int UNUSED>
-class command_queue_ref_ {
+class event_ref_ {
 public:
-  inline command_queue_ref_(cl_command_queue q) 
-      : id_(q) {
+  inline event_ref_(cl_event id)
+      : id_(id) {
   }
-  inline command_queue_ref_(const command_queue_ref_ &r) 
+  inline event_ref_(const event_ref &r)
       : id_(r.id_) {
-    clRetainCommandQueue(id_);
+    clRetainEvent(id_);
   }
-  inline command_queue_ref_(context_ref_ context,
-    device_ref device,
-    bool out_of_order = false,
-    bool profiling = false)
-      : id_(NULL) {
-    int err;
-    id_ = clCreateCommandQueue(context.id(), device.id(),
-          (out_of_order ? CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE : 0) |
-          (profiling ? CL_QUEUE_PROFILING_ENABLE : 0)
-        &err);
-    if(err != CL_SUCCESS) {
-      throw std::runtime_error("error creating command queue");
-    }
-  }
-  inline ~command_queue_ref_() {
-    clReleaseCommandQueue(id_);
+  inline ~event_ref_() {
+    clReleaseEvent(id_);
   }
 
-  inline command_queue_ref_& operator=(const command_queue_ref_ &q) {
-    if(id_ != q.id_) {
-      clReleaseCommandQueue(id_);
-      id_ = q.id_;
-      clRetainCommandQueue(id_);
+  event_ref_& operator=(const event_ref_ &r) {
+    if(id_ != r.id_) {
+      clReleaseEvent(id_);
+      id_ = r.id_;
+      clRetainEvent(id_);
     }
     return *this;
   }
-  inline bool operator=(const command_queue_ref_ &q) {
-    return id_ == q.id_;
+  bool operator==(const event_ref_ &r) {
+    return id_ == r.id_;
   }
 
+  void wait() {
+    int err = clWaitForEvents(1, &id_);
+    if(err != CL_SUCCESS) {
+      throw std::runtime_error("error waiting for event!");
+    }
+  }
+
+  template<typename ITER1, typename ITER2>
+  static void wait_for(ITER1 begin, ITER2 end) {
+    std::vector<event_ref> events;
+    events.insert(begin, end);
+    int err = clWaitForEvents(events.size(), 
+      reinterpret_cast<cl_event*>(&events[0]));
+    if(err != CL_SUCCESS) {
+      throw std::runtime_error("error waiting for event!");
+    }
+  }
 private:
-  cl_command_queue id_;
+  cl_event id_;
 };
 
 template<int UNUSED>
-class event_ref_ {
-};
-
-template<typename T>
-class buffer_ref {
+class buffer_ref_ {
 public:
-  buffer_ref(context_ref context,
-      std::size_t num_elements,
+  buffer_ref_(context_ref context,
+      std::size_t size,
       bool kernel_can_read = true,
       bool kernel_can_write = true,
       bool mappable = false)
@@ -309,16 +331,17 @@ public:
           ((!kernel_can_read && kernel_can_write) ? CL_MEM_WRITE_ONLY : 0 ) |
           ((kernel_can_read && !kernel_can_write) ? CL_MEM_READ_ONLY : 0) |
           (mappable ? CL_MEM_ALLOC_HOST_PTR : 0),
-        sizeof(T) * num_elements,
+        size,
         NULL,
         &err);
     if(err != CL_SUCCESS) {
       throw std::runtime_error("error creating cl buffer");
     }
   }
-  buffer_ref(context_ref context,
+  template<typename T>
+  buffer_ref_(context_ref context,
       T *buffer,
-      std::size_t num_elements,
+      std::size_t size,
       bool kernel_can_read = true,
       bool kernel_can_write = true,
       bool mappable = false)
@@ -330,33 +353,35 @@ public:
           ((kernel_can_read && !kernel_can_write) ? CL_MEM_READ_ONLY : 0) |
           CL_MEM_COPY_HOST_PTR |
           (mappable ? CL_MEM_ALLOC_HOST_PTR : 0),
-        sizeof(T) * num_elements,
+        size,
         reinterpret_cast<void*>(buffer),
         &err);
     if(err != CL_SUCCESS) {
       throw std::runtime_error("error creating cl buffer");
     }
   }
-  template<typename T2>
-  inline buffer_ref(const buffer_ref<T2> &r)
+
+  inline buffer_ref_(const buffer_ref_ &r)
       : id_(r.id_) {
     clRetainMemObject(id_);
   }
-  ~buffer_ref() {
+  inline ~buffer_ref_() {
   }
 
-  template<typename T2>
-  bool operator==(const buffer_ref<T2> &r) const {
+  bool operator==(const buffer_ref_ &r) const {
     return id_ != r.id_;
   }
-  template<typename T2>
-  buffer_ref<T>& operator=(const buffer_ref<T2> &r) {
+  buffer_ref_& operator=(const buffer_ref_ &r) {
     if(id_ != r.id_) {
       clReleaseMemObject(id_);
       id_ = r.id_;
       clRetainMemObject(id_);
     }
     return *this;
+  }
+
+  inline cl_mem id() const { 
+    return id_;
   }
 
 private:
@@ -387,11 +412,11 @@ public:
   }
   /* TODO: binary programs */
   inline ~program_ref_() {
-    clReleaseProgram(r.id_);
+    clReleaseProgram(id_);
   }
 
-  inline void build(const std::string &compiler_opts) {
-    err = clBuildProgram(id_,
+  inline void build(const std::string &compiler_opts="") {
+    int err = clBuildProgram(id_,
         0, NULL,
         compiler_opts.c_str(),
         NULL, NULL);
@@ -402,12 +427,12 @@ public:
   }
 
   template<typename ITER1, typename ITER2>
-  inline void build_for(const std::string &compiler_opts,
-      ITER1 begin, ITER2 end) {
+  inline void build_for(ITER1 begin, ITER2 end,
+      const std::string &compiler_opts="") {
     std::vector<device_ref> devices;
     devices.insert(begin, end);
     int err = clBuildProgram(id_,
-        devices.size(), reinterpret_case<cl_device_id*>(&devices[0]),
+        devices.size(), reinterpret_cast<cl_device_id*>(&devices[0]),
         compiler_opts.c_str(),
         NULL, NULL);
     if(err != CL_SUCCESS) {
@@ -416,15 +441,7 @@ public:
     }
   }
 
-  kernel_ref get_kernel(const std::string &kernel_name) {
-    int err;
-    cl_kernel kernel_id = clCreateKernel(id_, kernel_name.c_str(), &err);
-    if(err != CL_SUCCESS) {
-      throw std::runtime_error("error creating kernel from program.  "
-          "has it been built?");
-    }
-    return kernel_ref(kernel_id);
-  }
+  class kernel_ref_<0> get_kernel(const std::string &kernel_name);
 
   inline program_ref_& operator=(const program_ref_ &p) {
     if(id_ != p.id_) {
@@ -462,7 +479,7 @@ struct cl_kernel_workgroup_info_retval<CL_KERNEL_LOCAL_MEM_SIZE> {
 
 template<typename RETVAL> RETVAL kernel_get_workgroup_info_(
     cl_kernel kernel_id,
-    cl_device device_id,
+    cl_device_id device_id,
     cl_kernel_work_group_info param) {
   RETVAL retval;
   int err;
@@ -482,7 +499,7 @@ template<typename RETVAL> RETVAL kernel_get_workgroup_info_(
 template<> std::vector<std::size_t>
 kernel_get_workgroup_info_<std::vector<std::size_t> >(
     cl_kernel kernel_id,
-    cl_device device_id,
+    cl_device_id device_id,
     cl_kernel_work_group_info param) {
   std::vector<std::size_t> buffer;
   buffer.reserve(3);
@@ -526,18 +543,272 @@ public:
 
   template<cl_kernel_work_group_info PARAM>
   typename cl_kernel_workgroup_info_retval<PARAM>::value
-  inline get_info(const device &d) const {
+  inline get_info(const device_ref &d) const {
     return kernel_get_workgroup_info_
-        <typename cl_kernel_workgrou_info_retval<PARAM>::value>
+        <typename cl_kernel_workgroup_info_retval<PARAM>::value>
         (id_,
          d.id(),
          PARAM);
   }
 
+  inline std::size_t work_group_size(const device_ref &d) const {
+    return get_info<CL_KERNEL_WORK_GROUP_SIZE>(d);
+  }
+  inline std::vector<std::size_t> compile_work_group_size
+      (const device_ref &d) const {
+    return get_info<CL_KERNEL_COMPILE_WORK_GROUP_SIZE>(d);
+  }
+  inline uint64_t local_mem_size(const device_ref &d) const {
+    return get_info<CL_KERNEL_LOCAL_MEM_SIZE>(d);
+  }
+
+  template<typename T>
+  inline kernel_ref_& set_arg(uint32_t index, const T &t) {
+    int err;
+    err = clSetKernelArg(id_,
+        index,
+        sizeof(T),
+        &t);
+    if(err != CL_SUCCESS) {
+      throw std::runtime_error("error binding kernel argument!");
+    }
+  }
+
+  inline cl_kernel id() const {
+    return id_;
+  }
+
 private:
-
-
   cl_kernel id_;
+};
+
+template<int N> 
+kernel_ref program_ref_<N>::get_kernel(const std::string &kernel_name) {
+  int err;
+  cl_kernel kernel_id = clCreateKernel(id_, kernel_name.c_str(), &err);
+  if(err != CL_SUCCESS) {
+    throw std::runtime_error("error creating kernel from program.  "
+        "has it been built?");
+  }
+  return kernel_ref(kernel_id);
+}
+
+template<int UNUSED>
+class command_queue_ref_ {
+public:
+  inline command_queue_ref_(cl_command_queue q) 
+      : id_(q) {
+  }
+  inline command_queue_ref_(const command_queue_ref_ &r) 
+      : id_(r.id_) {
+    clRetainCommandQueue(id_);
+  }
+  inline command_queue_ref_(context_ref context,
+    device_ref device,
+    bool out_of_order = false,
+    bool profiling = false)
+      : id_(NULL) {
+    int err;
+    id_ = clCreateCommandQueue(context.id(), device.id(),
+          (out_of_order ? CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE : 0) |
+          (profiling ? CL_QUEUE_PROFILING_ENABLE : 0),
+        &err);
+    if(err != CL_SUCCESS) {
+      throw std::runtime_error("error creating command queue");
+    }
+  }
+  inline ~command_queue_ref_() {
+    clReleaseCommandQueue(id_);
+  }
+
+  inline command_queue_ref_& operator=(const command_queue_ref_ &q) {
+    if(id_ != q.id_) {
+      clReleaseCommandQueue(id_);
+      id_ = q.id_;
+      clRetainCommandQueue(id_);
+    }
+    return *this;
+  }
+  inline bool operator==(const command_queue_ref_ &q) {
+    return id_ == q.id_;
+  }
+
+  event_ref read_buffer(buffer_ref buffer, std::size_t size,
+      void *dest, 
+      bool blocking=false, 
+      std::size_t offset=0) {
+    cl_event event;
+    int err;
+    err = clEnqueueReadBuffer(id_, 
+        buffer.id(), 
+        blocking,
+        offset,
+        size,
+        dest,
+        0, NULL, &event);
+    if(err != CL_SUCCESS) {
+      throw std::runtime_error("error enqueueing cl buffer read");
+    }
+    return event_ref(event);
+  }
+
+  template<typename ITER1, typename ITER2>
+  event_ref read_buffer(buffer_ref buffer, std::size_t size,
+      void *dest, ITER1 wait_begin, ITER2 wait_end,
+      bool blocking=false, std::size_t offset=0) {
+    cl_event event;
+    std::vector<event_ref> events;
+    events.insert(wait_begin, wait_end);
+    int err;
+    err = clEnqueueReadBuffer(id_,
+        buffer.id(),
+        blocking,
+        offset,
+        size,
+        dest,
+        events.size(),
+        reinterpret_cast<cl_event*>(&events[0]),
+        &event);
+    if(err != CL_SUCCESS) {
+      throw std::runtime_error("error enqueueing cl buffer read");
+    }
+    return event_ref(event);
+  }
+
+  event_ref write_buffer(buffer_ref buffer, std::size_t size,
+      void *src, 
+      bool blocking=false, 
+      std::size_t offset=0) {
+    cl_event event;
+    int err;
+    err = clEnqueueWriteBuffer(id_, 
+        buffer.id(), 
+        blocking,
+        offset,
+        size,
+        src,
+        0, NULL, &event);
+    if(err != CL_SUCCESS) {
+      throw std::runtime_error("error enqueueing cl buffer write");
+    }
+    return event_ref(event);
+  }
+
+  template<typename ITER1, typename ITER2>
+  event_ref write_buffer(buffer_ref buffer, std::size_t size,
+      void *src, ITER1 wait_begin, ITER2 wait_end,
+      bool blocking=false, std::size_t offset=0) {
+    cl_event event;
+    std::vector<event_ref> events;
+    events.insert(wait_begin, wait_end);
+    int err;
+    err = clEnqueueWriteBuffer(id_,
+        buffer.id(),
+        blocking,
+        offset,
+        size,
+        src,
+        events.size(),
+        reinterpret_cast<cl_event*>(&events[0]),
+        &event);
+    if(err != CL_SUCCESS) {
+      throw std::runtime_error("error enqueueing cl buffer write");
+    }
+    return event_ref(event);
+  }
+
+  event_ref copy_buffer(buffer_ref src, buffer_ref dst,
+      std::size_t size,
+      std::size_t src_offset=0, std::size_t dst_offset=0) {
+    cl_event event;
+    int err;
+    err = clEnqueueCopyBuffer(id_, 
+        src.id(),
+        dst.id(),
+        src_offset,
+        dst_offset,
+        size,
+        0, NULL,
+        &event);
+    if(err != CL_SUCCESS) {
+      throw std::runtime_error("error enqueueing cl buffer copy");
+    }
+    return event_ref(event);
+  }
+
+  template<typename ITER1, typename ITER2>
+  event_ref copy_buffer(buffer_ref src, buffer_ref dst,
+      std::size_t size,
+      ITER1 wait_begin, ITER2 wait_end,
+      std::size_t src_offset=0, std::size_t dst_offset=0) {
+    cl_event event;
+    int err;
+    std::vector<event_ref> events;
+    events.insert(wait_begin, wait_end);
+    err = clEnqueueCopyBuffer(id_, 
+        src.id(),
+        dst.id(),
+        src_offset,
+        dst_offset,
+        size,
+        events.size(), 
+        reinterpret_cast<cl_event*>(&events[0]),
+        &event);
+    if(err != CL_SUCCESS) {
+      throw std::runtime_error("error enqueueing cl buffer copy");
+    }
+    return event_ref(event);
+  }
+  
+  template<typename S1, typename S2>
+  event_ref run_kernel(kernel_ref kernel,
+      std::size_t work_dim,
+      const S1 &global_sizes,
+      const S2 &local_sizes) {
+    cl_event event;
+    int err;
+    err = clEnqueueNDRangeKernel(id_,
+        kernel.id(),
+        work_dim,
+        NULL,
+        &global_sizes[0],
+        &local_sizes[0],
+        0, NULL,
+        &event);
+    if(err != CL_SUCCESS) {
+      throw std::runtime_error("error enqueueing cl kernel");
+    }
+    return event_ref(event);
+  }
+
+  template<typename S1, typename S2, typename ITER1, typename ITER2>
+  event_ref run_kernel(kernel_ref kernel,
+      std::size_t work_dim,
+      const S1 &global_sizes,
+      const S2 &local_sizes,
+      ITER1 wait_begin,
+      ITER2 wait_end) {
+    cl_event event;
+    int err;
+    std::vector<event_ref> events;
+    events.insert(wait_begin, wait_end);
+    err = clEnqueueNDRangeKernel(id_,
+        kernel.id(),
+        work_dim,
+        NULL,
+        &global_sizes[0],
+        &local_sizes[0],
+        events.size(), 
+        reinterpret_cast<cl_event*>(&events[0]),
+        &event);
+    if(err != CL_SUCCESS) {
+      throw std::runtime_error("error enqueueing cl kernel");
+    }
+    return event_ref(event);
+  }
+
+private:
+  cl_command_queue id_;
 };
 
 }
