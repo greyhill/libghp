@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
   kernel.set_arg(2, 128);
   std::cout << "work group size: " << kernel.work_group_size(d) << std::endl;
 
-  std::size_t s = 128;
+  std::size_t s = 12800;
   std::size_t s2 = 1;
 
   for(int i=0; i<128; ++i) {
