@@ -8,6 +8,8 @@
 #include <stdexcept>
 #include <vector>
 
+#include <stdint.h>
+
 namespace matlab {
 
 template<int UNUSED> class mex_ref_;

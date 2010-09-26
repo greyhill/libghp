@@ -17,6 +17,7 @@
 
 namespace cl {
 
+template<int UNUSED> class cl_error_;
 template<int UNUSED> class platform_ref_;
 template<int UNUSED> class device_ref_;
 template<int UNUSED> class context_ref_;
@@ -26,6 +27,7 @@ template<int UNUSED> class buffer_ref_;
 template<int UNUSED> class program_ref_;
 template<int UNUSED> class kernel_ref_;
 
+typedef cl_error_<0> cl_error;
 typedef platform_ref_<0> platform_ref;
 typedef device_ref_<0> device_ref;
 typedef context_ref_<0> context_ref;
@@ -34,6 +36,120 @@ typedef command_queue_ref_<0> command_queue_ref;
 typedef buffer_ref_<0> buffer_ref;
 typedef program_ref_<0> program_ref;
 typedef kernel_ref_<0> kernel_ref;
+
+const char* cl_err_string(cl_int err) {
+  switch (err) {
+    case CL_SUCCESS:                          
+      return "Success!";
+    case CL_DEVICE_NOT_FOUND:                 
+      return "Device not found.";
+    case CL_DEVICE_NOT_AVAILABLE:             
+      return "Device not available";
+    case CL_COMPILER_NOT_AVAILABLE:           
+      return "Compiler not available";
+    case CL_MEM_OBJECT_ALLOCATION_FAILURE:    
+      return "Memory object allocation failure";
+    case CL_OUT_OF_RESOURCES:                 
+      return "Out of resources";
+    case CL_OUT_OF_HOST_MEMORY:               
+      return "Out of host memory";
+    case CL_PROFILING_INFO_NOT_AVAILABLE:     
+      return "Profiling information not available";
+    case CL_MEM_COPY_OVERLAP:                 
+      return "Memory copy overlap";
+    case CL_IMAGE_FORMAT_MISMATCH:            
+      return "Image format mismatch";
+    case CL_IMAGE_FORMAT_NOT_SUPPORTED:       
+      return "Image format not supported";
+    case CL_BUILD_PROGRAM_FAILURE:            
+      return "Program build failure";
+    case CL_MAP_FAILURE:                      
+      return "Map failure";
+    case CL_INVALID_VALUE:                    
+      return "Invalid value";
+    case CL_INVALID_DEVICE_TYPE:              
+      return "Invalid device type";
+    case CL_INVALID_PLATFORM:                 
+      return "Invalid platform";
+    case CL_INVALID_DEVICE:                   
+      return "Invalid device";
+    case CL_INVALID_CONTEXT:                  
+      return "Invalid context";
+    case CL_INVALID_QUEUE_PROPERTIES:         
+      return "Invalid queue properties";
+    case CL_INVALID_COMMAND_QUEUE:            
+      return "Invalid command queue";
+    case CL_INVALID_HOST_PTR:                 
+      return "Invalid host pointer";
+    case CL_INVALID_MEM_OBJECT:               
+      return "Invalid memory object";
+    case CL_INVALID_IMAGE_FORMAT_DESCRIPTOR:  
+      return "Invalid image format descriptor";
+    case CL_INVALID_IMAGE_SIZE:               
+      return "Invalid image size";
+    case CL_INVALID_SAMPLER:                  
+      return "Invalid sampler";
+    case CL_INVALID_BINARY:                   
+      return "Invalid binary";
+    case CL_INVALID_BUILD_OPTIONS:            
+      return "Invalid build options";
+    case CL_INVALID_PROGRAM:                  
+      return "Invalid program";
+    case CL_INVALID_PROGRAM_EXECUTABLE:       
+      return "Invalid program executable";
+    case CL_INVALID_KERNEL_NAME:              
+      return "Invalid kernel name";
+    case CL_INVALID_KERNEL_DEFINITION:        
+      return "Invalid kernel definition";
+    case CL_INVALID_KERNEL:                   
+      return "Invalid kernel";
+    case CL_INVALID_ARG_INDEX:                
+      return "Invalid argument index";
+    case CL_INVALID_ARG_VALUE:                
+      return "Invalid argument value";
+    case CL_INVALID_ARG_SIZE:                 
+      return "Invalid argument size";
+    case CL_INVALID_KERNEL_ARGS:              
+      return "Invalid kernel arguments";
+    case CL_INVALID_WORK_DIMENSION:           
+      return "Invalid work dimension";
+    case CL_INVALID_WORK_GROUP_SIZE:          
+      return "Invalid work group size";
+    case CL_INVALID_WORK_ITEM_SIZE:           
+      return "Invalid work item size";
+    case CL_INVALID_GLOBAL_OFFSET:            
+      return "Invalid global offset";
+    case CL_INVALID_EVENT_WAIT_LIST:          
+      return "Invalid event wait list";
+    case CL_INVALID_EVENT:                    
+      return "Invalid event";
+    case CL_INVALID_OPERATION:                
+      return "Invalid operation";
+    case CL_INVALID_GL_OBJECT:                
+      return "Invalid OpenGL object";
+    case CL_INVALID_BUFFER_SIZE:              
+      return "Invalid buffer size";
+    case CL_INVALID_MIP_LEVEL:                
+      return "Invalid mip-map level";
+    default:                                  
+      return "Unknown";
+  }
+}
+
+template<int UNUSED>
+class cl_error_ : public std::runtime_error {
+public:
+  cl_error_(int err_code, const std::string &msg) 
+      : std::runtime_error(msg + ": " + cl_err_string(err_code)),
+      err_code_(err_code),
+      msg_(msg) {
+  }
+  ~cl_error_() throw() { }
+
+private:
+  int err_code_;
+  std::string msg_;
+};
 
 /* right now, all parameters return strings */
 template<cl_platform_info I> struct cl_platform_info_retval {
@@ -52,10 +168,10 @@ template<> std::string platform_get_info_<std::string>(cl_platform_id id,
   int err;
   std::size_t size;
   err = clGetPlatformInfo(id, param, 0, NULL, &size);
-  if(err != CL_SUCCESS) throw std::runtime_error("cl error");
+  if(err != CL_SUCCESS) throw cl_error(err, "cl error");
   buf.reserve(size);
   err = clGetPlatformInfo(id, param, size, &buf[0], NULL);
-  if(err != CL_SUCCESS) throw std::runtime_error("cl error");
+  if(err != CL_SUCCESS) throw cl_error(err, "cl error");
 
   return std::string(&buf[0]);
 }
@@ -80,10 +196,10 @@ public:
     uint32_t num_platforms;
     std::vector<cl_platform_id> platform_ids;
     err = clGetPlatformIDs(0, NULL, &num_platforms);
-    if(err != CL_SUCCESS) throw std::runtime_error("cl error");
+    if(err != CL_SUCCESS) throw cl_error(err, "cl error");
     platform_ids.reserve(num_platforms);
     err = clGetPlatformIDs(num_platforms, &platform_ids[0], NULL);
-    if(err != CL_SUCCESS) throw std::runtime_error("cl error");
+    if(err != CL_SUCCESS) throw cl_error(err, "cl error");
 
     for(int i=0; i<num_platforms; ++i) {
       c.insert(c.end(), platform_ref_(platform_ids[i]));
@@ -96,11 +212,11 @@ public:
     uint32_t num_devices;
     std::vector<cl_device_id> device_ids;
     err = clGetDeviceIDs(id_, CL_DEVICE_TYPE_ALL, 0, NULL, &num_devices);
-    if(err != CL_SUCCESS) throw std::runtime_error("cl error");
+    if(err != CL_SUCCESS) throw cl_error(err, "cl error");
     device_ids.reserve(num_devices);
     err = clGetDeviceIDs(id_, CL_DEVICE_TYPE_ALL, num_devices,
         &device_ids[0], NULL);
-    if(err != CL_SUCCESS) throw std::runtime_error("cl error");
+    if(err != CL_SUCCESS) throw cl_error(err, "cl error");
 
     for(int i=0; i<num_devices; ++i) {
       c.insert(c.end(), device_ref_<0>(device_ids[i]));
@@ -147,7 +263,7 @@ template<typename RETVAL> RETVAL device_get_info_(cl_device_id id,
   RETVAL retval;
   err = clGetDeviceInfo(id, param,
       sizeof(RETVAL), &retval, NULL);
-  if(err != CL_SUCCESS) throw std::runtime_error("cl error");
+  if(err != CL_SUCCESS) throw cl_error(err, "cl error");
   return retval;
 }
 
@@ -157,10 +273,10 @@ template<> std::string device_get_info_<std::string>(cl_device_id id,
   std::vector<char> buffer;
   std::size_t size;
   err = clGetDeviceInfo(id, param, 0, NULL, &size);
-  if(err != CL_SUCCESS) throw std::runtime_error("cl error");
+  if(err != CL_SUCCESS) throw cl_error(err, "cl error");
   buffer.reserve(size);
   err = clGetDeviceInfo(id, param, size, &buffer[0], NULL);
-  if(err != CL_SUCCESS) throw std::runtime_error("cl error");
+  if(err != CL_SUCCESS) throw cl_error(err, "cl error");
   return std::string(&buffer[0]);
 }
 
@@ -176,10 +292,10 @@ device_get_info_<std::vector<std::size_t> >(cl_device_id id,
   std::vector<std::size_t> buffer;
   std::size_t size;
   err = clGetDeviceInfo(id, param, 0, NULL, &size);
-  if(err != CL_SUCCESS) throw std::runtime_error("cl error");
+  if(err != CL_SUCCESS) throw cl_error(err, "cl error");
   buffer.reserve(size);
   err = clGetDeviceInfo(id, param, size, &buffer[0], NULL);
-  if(err != CL_SUCCESS) throw std::runtime_error("cl error");
+  if(err != CL_SUCCESS) throw cl_error(err, "cl error");
   return buffer;
 }
 
@@ -242,7 +358,7 @@ public:
         NULL,
         &err);
     if(err != CL_SUCCESS) {
-      throw std::runtime_error("error creating CL context");
+      throw cl_error(err, "error creating CL context");
     }
   }
   inline ~context_ref_() {
@@ -298,7 +414,7 @@ public:
   void wait() {
     int err = clWaitForEvents(1, &id_);
     if(err != CL_SUCCESS) {
-      throw std::runtime_error("error waiting for event!");
+      throw cl_error(err, "error waiting for event!");
     }
   }
 
@@ -309,7 +425,7 @@ public:
     int err = clWaitForEvents(events.size(), 
       reinterpret_cast<cl_event*>(&events[0]));
     if(err != CL_SUCCESS) {
-      throw std::runtime_error("error waiting for event!");
+      throw cl_error(err, "error waiting for event!");
     }
   }
 private:
@@ -335,7 +451,7 @@ public:
         NULL,
         &err);
     if(err != CL_SUCCESS) {
-      throw std::runtime_error("error creating cl buffer");
+      throw cl_error(err, "error creating cl buffer");
     }
   }
   template<typename T>
@@ -357,7 +473,7 @@ public:
         reinterpret_cast<void*>(buffer),
         &err);
     if(err != CL_SUCCESS) {
-      throw std::runtime_error("error creating cl buffer");
+      throw cl_error(err, "error creating cl buffer");
     }
   }
 
@@ -366,6 +482,7 @@ public:
     clRetainMemObject(id_);
   }
   inline ~buffer_ref_() {
+    clReleaseMemObject(id_);
   }
 
   bool operator==(const buffer_ref_ &r) const {
@@ -407,7 +524,7 @@ public:
         1, &tmp,
         NULL, &err);
     if(err != CL_SUCCESS) {
-      throw std::runtime_error("error building CL program from source");
+      throw cl_error(err, "error building CL program from source");
     }
   }
   /* TODO: binary programs */
@@ -421,7 +538,7 @@ public:
         compiler_opts.c_str(),
         NULL, NULL);
     if(err != CL_SUCCESS) {
-      throw std::runtime_error("error compiling CL program for all devices"
+      throw cl_error(err, "error compiling CL program for all devices"
           " in context");
     }
   }
@@ -436,7 +553,7 @@ public:
         compiler_opts.c_str(),
         NULL, NULL);
     if(err != CL_SUCCESS) {
-      throw std::runtime_error("error building CL program for specific "
+      throw cl_error(err, "error building CL program for specific "
           "devices");
     }
   }
@@ -491,7 +608,7 @@ template<typename RETVAL> RETVAL kernel_get_workgroup_info_(
       &retval,
       NULL);
   if(err != CL_SUCCESS) {
-    throw std::runtime_error("cl error in clGetKernelWorkGroupInfo");
+    throw cl_error(err, "cl error in clGetKernelWorkGroupInfo");
   }
   return retval;
 }
@@ -512,7 +629,7 @@ kernel_get_workgroup_info_<std::vector<std::size_t> >(
       &buffer[0],
       NULL);
   if(err != CL_SUCCESS) {
-    throw std::runtime_error("cl error in clGetKernelWorkGroupInfo");
+    throw cl_error(err, "cl error in clGetKernelWorkGroupInfo");
   }
   return buffer;
 }
@@ -527,7 +644,9 @@ public:
       : id_(k.id_) {
     clRetainKernel(id_);
   }
-  inline ~kernel_ref_() { }
+  inline ~kernel_ref_() { 
+    clReleaseKernel(id_);
+  }
 
   inline kernel_ref_& operator=(const kernel_ref_ &k) {
     if(id_ != k.id_) {
@@ -570,7 +689,7 @@ public:
         sizeof(T),
         &t);
     if(err != CL_SUCCESS) {
-      throw std::runtime_error("error binding kernel argument!");
+      throw cl_error(err, "error binding kernel argument!");
     }
   }
 
@@ -587,7 +706,7 @@ kernel_ref program_ref_<N>::get_kernel(const std::string &kernel_name) {
   int err;
   cl_kernel kernel_id = clCreateKernel(id_, kernel_name.c_str(), &err);
   if(err != CL_SUCCESS) {
-    throw std::runtime_error("error creating kernel from program.  "
+    throw cl_error(err, "error creating kernel from program.  "
         "has it been built?");
   }
   return kernel_ref(kernel_id);
@@ -614,7 +733,7 @@ public:
           (profiling ? CL_QUEUE_PROFILING_ENABLE : 0),
         &err);
     if(err != CL_SUCCESS) {
-      throw std::runtime_error("error creating command queue");
+      throw cl_error(err, "error creating command queue");
     }
   }
   inline ~command_queue_ref_() {
@@ -647,7 +766,7 @@ public:
         dest,
         0, NULL, &event);
     if(err != CL_SUCCESS) {
-      throw std::runtime_error("error enqueueing cl buffer read");
+      throw cl_error(err, "error enqueueing cl buffer read");
     }
     return event_ref(event);
   }
@@ -670,7 +789,7 @@ public:
         reinterpret_cast<cl_event*>(&events[0]),
         &event);
     if(err != CL_SUCCESS) {
-      throw std::runtime_error("error enqueueing cl buffer read");
+      throw cl_error(err, "error enqueueing cl buffer read");
     }
     return event_ref(event);
   }
@@ -689,7 +808,7 @@ public:
         src,
         0, NULL, &event);
     if(err != CL_SUCCESS) {
-      throw std::runtime_error("error enqueueing cl buffer write");
+      throw cl_error(err, "error enqueueing cl buffer write");
     }
     return event_ref(event);
   }
@@ -712,7 +831,7 @@ public:
         reinterpret_cast<cl_event*>(&events[0]),
         &event);
     if(err != CL_SUCCESS) {
-      throw std::runtime_error("error enqueueing cl buffer write");
+      throw cl_error(err, "error enqueueing cl buffer write");
     }
     return event_ref(event);
   }
@@ -731,7 +850,7 @@ public:
         0, NULL,
         &event);
     if(err != CL_SUCCESS) {
-      throw std::runtime_error("error enqueueing cl buffer copy");
+      throw cl_error(err, "error enqueueing cl buffer copy");
     }
     return event_ref(event);
   }
@@ -755,7 +874,7 @@ public:
         reinterpret_cast<cl_event*>(&events[0]),
         &event);
     if(err != CL_SUCCESS) {
-      throw std::runtime_error("error enqueueing cl buffer copy");
+      throw cl_error(err, "error enqueueing cl buffer copy");
     }
     return event_ref(event);
   }
@@ -776,7 +895,7 @@ public:
         0, NULL,
         &event);
     if(err != CL_SUCCESS) {
-      throw std::runtime_error("error enqueueing cl kernel");
+      throw cl_error(err, "error enqueueing cl kernel");
     }
     return event_ref(event);
   }
@@ -802,7 +921,7 @@ public:
         reinterpret_cast<cl_event*>(&events[0]),
         &event);
     if(err != CL_SUCCESS) {
-      throw std::runtime_error("error enqueueing cl kernel");
+      throw cl_error(err, "error enqueueing cl kernel");
     }
     return event_ref(event);
   }
