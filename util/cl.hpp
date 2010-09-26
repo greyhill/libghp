@@ -361,6 +361,27 @@ public:
       throw cl_error(err, "error creating CL context");
     }
   }
+  template<typename ITER1, typename ITER2>
+  inline context_ref_(platform_ref platform, ITER1 device_begin,
+      ITER2 device_end)
+      : id_(NULL) {
+    int err;
+    std::vector<device_ref> devices;
+    devices.insert(device_begin, device_end);
+    cl_context_properties context_props[] =
+        { CL_CONTEXT_PLATFORM,
+        reinterpret_cast<cl_context_properties>(platform.id()),
+        NULL };
+    id_ = clCreateContext(context_props,
+        devices.size(),
+        &devices[0],
+        NULL,
+        NULL,
+        &err);
+    if(err != CL_SUCCESS) {
+      throw cl_error(err, "error creating CL context");
+    }
+  }
   inline ~context_ref_() {
     clReleaseContext(id_);
   }
@@ -527,7 +548,6 @@ public:
       throw cl_error(err, "error building CL program from source");
     }
   }
-  /* TODO: binary programs */
   inline ~program_ref_() {
     clReleaseProgram(id_);
   }
