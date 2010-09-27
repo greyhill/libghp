@@ -17,6 +17,7 @@ const char *source = "\n" \
  "\n";
 
 int main(int argc, char *argv[]) {
+  while(true) {
   std::list<cl::platform_ref> platforms;
   cl::platform_ref::get_platforms(platforms);
 
@@ -68,5 +69,6 @@ int main(int argc, char *argv[]) {
     std::cout << vecs[i] << " ";
   }
   std::cout << std::endl;
+  }
 }
 

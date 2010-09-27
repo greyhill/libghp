@@ -383,6 +383,16 @@ public:
     }
   }
   inline ~context_ref_() {
+#ifndef NDEBUG
+    uint32_t refcount;
+    clGetContextInfo(id_,
+        CL_CONTEXT_REFERENCE_COUNT,
+        sizeof(refcount),
+        &refcount,
+        NULL);
+    std::cerr << "context_ref dtor.  refcount: " 
+        << (refcount-1) << std::endl;
+#endif
     clReleaseContext(id_);
   }
 
@@ -417,6 +427,16 @@ public:
     clRetainEvent(id_);
   }
   inline ~event_ref_() {
+#ifndef NDEBUG
+    uint32_t refcount;
+    clGetEventInfo(id_,
+        CL_EVENT_REFERENCE_COUNT,
+        sizeof(refcount),
+        &refcount,
+        NULL);
+    std::cerr << "event_ref dtor; refcount: " << 
+       (refcount-1) << std::endl;
+#endif
     clReleaseEvent(id_);
   }
 
@@ -503,6 +523,17 @@ public:
     clRetainMemObject(id_);
   }
   inline ~buffer_ref_() {
+#ifndef NDEBUG
+    uint32_t refcount;
+    clGetMemObjectInfo(
+        id_,
+        CL_MEM_REFERENCE_COUNT,
+        sizeof(refcount),
+        &refcount,
+        NULL);
+    std::cerr << "buffer_ref dtor; refcount: " << 
+        (refcount-1) << std::endl;
+#endif
     clReleaseMemObject(id_);
   }
 
@@ -549,6 +580,16 @@ public:
     }
   }
   inline ~program_ref_() {
+#ifndef NDEBUG
+    uint32_t refcount;
+    clGetProgramInfo(id_,
+        CL_PROGRAM_REFERENCE_COUNT,
+        sizeof(refcount),
+        &refcount,
+        NULL);
+    std::cerr << "cl::program dtor; refcount: " << 
+        (refcount-1) << std::endl;
+#endif
     clReleaseProgram(id_);
   }
 
@@ -665,6 +706,16 @@ public:
     clRetainKernel(id_);
   }
   inline ~kernel_ref_() { 
+#ifndef NDEBUG
+    uint32_t refcount;
+    clGetKernelInfo(id_,
+        CL_KERNEL_REFERENCE_COUNT,
+        sizeof(refcount),
+        &refcount,
+        NULL);
+    std::cerr << "cl::kernel dtor; refcount: " << 
+        (refcount-1) << std::endl;
+#endif
     clReleaseKernel(id_);
   }
 
@@ -757,6 +808,16 @@ public:
     }
   }
   inline ~command_queue_ref_() {
+#ifndef NDEBUG
+    uint32_t refcount;
+    clGetCommandQueueInfo(id_,
+        CL_QUEUE_REFERENCE_COUNT,
+        sizeof(refcount),
+        &refcount,
+        NULL);
+    std::cerr << "cl::command_queue dtor; refcount: " << 
+        (refcount-1) << std::endl;
+#endif
     clReleaseCommandQueue(id_);
   }
 
