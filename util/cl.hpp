@@ -374,7 +374,7 @@ public:
         NULL };
     id_ = clCreateContext(context_props,
         devices.size(),
-        &devices[0],
+        reinterpret_cast<cl_device_id*>(&devices[0]),
         NULL,
         NULL,
         &err);

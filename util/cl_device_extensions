@@ -3,12 +3,10 @@ DEVICE_INFO_RETVAL( CL_DEVICE_AVAILABLE,                      bool          );
 DEVICE_INFO_RETVAL( CL_DEVICE_COMPILER_AVAILABLE,             bool          );
 DEVICE_INFO_RETVAL( CL_DEVICE_ENDIAN_LITTLE,                  bool          );
 DEVICE_INFO_RETVAL( CL_DEVICE_ERROR_CORRECTION_SUPPORT,       bool          );
-DEVICE_INFO_RETVAL( CL_DEVICE_EXECUTION_CAPABILITIES,
-                                                cl_device_exec_capabilities );
+DEVICE_INFO_RETVAL( CL_DEVICE_EXECUTION_CAPABILITIES, cl_device_exec_capabilities );
 DEVICE_INFO_RETVAL( CL_DEVICE_EXTENSIONS,                     std::string   );
 DEVICE_INFO_RETVAL( CL_DEVICE_GLOBAL_MEM_CACHE_SIZE,          uint64_t      );
-DEVICE_INFO_RETVAL( CL_DEVICE_GLOBAL_MEM_CACHE_TYPE,
-                                                   cl_device_mem_cache_type );
+DEVICE_INFO_RETVAL( CL_DEVICE_GLOBAL_MEM_CACHE_TYPE, cl_device_mem_cache_type );
 DEVICE_INFO_RETVAL( CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE,      uint32_t      );
 DEVICE_INFO_RETVAL( CL_DEVICE_GLOBAL_MEM_SIZE,                uint64_t      );
 DEVICE_INFO_RETVAL( CL_DEVICE_IMAGE_SUPPORT,                  bool          );
@@ -17,8 +15,7 @@ DEVICE_INFO_RETVAL( CL_DEVICE_IMAGE2D_MAX_WIDTH,              std::size_t   );
 DEVICE_INFO_RETVAL( CL_DEVICE_IMAGE3D_MAX_DEPTH,              std::size_t   );
 DEVICE_INFO_RETVAL( CL_DEVICE_IMAGE3D_MAX_HEIGHT,             std::size_t   );
 DEVICE_INFO_RETVAL( CL_DEVICE_LOCAL_MEM_SIZE,                 uint64_t      );
-DEVICE_INFO_RETVAL( CL_DEVICE_LOCAL_MEM_TYPE,
-                                                   cl_device_local_mem_type );
+DEVICE_INFO_RETVAL( CL_DEVICE_LOCAL_MEM_TYPE,      cl_device_local_mem_type );
 DEVICE_INFO_RETVAL( CL_DEVICE_MAX_CLOCK_FREQUENCY,            uint32_t      );
 DEVICE_INFO_RETVAL( CL_DEVICE_MAX_COMPUTE_UNITS,              uint32_t      );
 DEVICE_INFO_RETVAL( CL_DEVICE_MAX_CONSTANT_ARGS,              uint32_t      );
@@ -29,14 +26,12 @@ DEVICE_INFO_RETVAL( CL_DEVICE_MAX_READ_IMAGE_ARGS,            uint32_t      );
 DEVICE_INFO_RETVAL( CL_DEVICE_MAX_SAMPLERS,                   uint32_t      );
 DEVICE_INFO_RETVAL( CL_DEVICE_MAX_WORK_GROUP_SIZE,            std::size_t   );
 DEVICE_INFO_RETVAL( CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS,       uint32_t      );
-DEVICE_INFO_RETVAL( CL_DEVICE_MAX_WORK_ITEM_SIZES,        
-                                                   std::vector<std::size_t> );
+DEVICE_INFO_RETVAL( CL_DEVICE_MAX_WORK_ITEM_SIZES, std::vector<std::size_t> );
 DEVICE_INFO_RETVAL( CL_DEVICE_MAX_WRITE_IMAGE_ARGS,           uint32_t      );
 DEVICE_INFO_RETVAL( CL_DEVICE_MEM_BASE_ADDR_ALIGN,            uint32_t      );
 DEVICE_INFO_RETVAL( CL_DEVICE_MIN_DATA_TYPE_ALIGN_SIZE,       uint32_t      );
 DEVICE_INFO_RETVAL( CL_DEVICE_NAME,                           std::string   );
-DEVICE_INFO_RETVAL( CL_DEVICE_PLATFORM,                       
-                                                           platform_ref_<0> );
+DEVICE_INFO_RETVAL( CL_DEVICE_PLATFORM,                    platform_ref_<0> );
 DEVICE_INFO_RETVAL( CL_DEVICE_PREFERRED_VECTOR_WIDTH_CHAR,    uint32_t      );
 DEVICE_INFO_RETVAL( CL_DEVICE_PREFERRED_VECTOR_WIDTH_SHORT,   uint32_t      );
 DEVICE_INFO_RETVAL( CL_DEVICE_PREFERRED_VECTOR_WIDTH_INT,     uint32_t      );
@@ -45,10 +40,8 @@ DEVICE_INFO_RETVAL( CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT,   uint32_t      );
 DEVICE_INFO_RETVAL( CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE,  uint32_t      );
 DEVICE_INFO_RETVAL( CL_DEVICE_PROFILE,                        std::string   );
 DEVICE_INFO_RETVAL( CL_DEVICE_PROFILING_TIMER_RESOLUTION,     std::size_t   );
-DEVICE_INFO_RETVAL( CL_DEVICE_QUEUE_PROPERTIES,               
-                                                cl_command_queue_properties );
-DEVICE_INFO_RETVAL( CL_DEVICE_SINGLE_FP_CONFIG,
-                                                        cl_device_fp_config );
+DEVICE_INFO_RETVAL( CL_DEVICE_QUEUE_PROPERTIES, cl_command_queue_properties );
+DEVICE_INFO_RETVAL( CL_DEVICE_SINGLE_FP_CONFIG,         cl_device_fp_config );
 DEVICE_INFO_RETVAL( CL_DEVICE_TYPE,                           cl_device_type);
 DEVICE_INFO_RETVAL( CL_DEVICE_VENDOR,                         std::string   );
 DEVICE_INFO_RETVAL( CL_DEVICE_VENDOR_ID,                      uint32_t      );
