@@ -37,6 +37,7 @@ typedef buffer_ref_<0> buffer_ref;
 typedef program_ref_<0> program_ref;
 typedef kernel_ref_<0> kernel_ref;
 
+namespace {
 const char* cl_err_string(cl_int err) {
   switch (err) {
     case CL_SUCCESS:                          
@@ -135,6 +136,7 @@ const char* cl_err_string(cl_int err) {
       return "Unknown";
   }
 }
+}
 
 template<int UNUSED>
 class cl_error_ : public std::runtime_error {
@@ -156,6 +158,7 @@ template<cl_platform_info I> struct cl_platform_info_retval {
   typedef std::string value;
 };
 
+namespace {
 template<typename RETVAL> RETVAL platform_get_info_(cl_platform_id id, 
     cl_platform_info param) {
   /* use specializations only */
@@ -174,6 +177,7 @@ template<> std::string platform_get_info_<std::string>(cl_platform_id id,
   if(err != CL_SUCCESS) throw cl_error(err, "cl error");
 
   return std::string(&buf[0]);
+}
 }
 
 template<int UNUSED>
@@ -246,6 +250,7 @@ private:
   cl_platform_id id_;
 };
 
+namespace {
 template<cl_device_info I> struct cl_device_info_retval {
 };
 #define DEVICE_INFO_RETVAL(x,y) \
@@ -302,6 +307,7 @@ device_get_info_<std::vector<std::size_t> >(cl_device_id id,
 template<> platform_ref_<0> device_get_info_<platform_ref_<0> >(cl_device_id id,
     cl_device_info param) {
   return platform_ref_<0>(device_get_info_<cl_platform_id>(id, param));
+}
 }
 
 template<int UNUSED>
@@ -655,6 +661,7 @@ struct cl_kernel_workgroup_info_retval<CL_KERNEL_LOCAL_MEM_SIZE> {
   typedef uint64_t value;
 };
 
+namespace {
 template<typename RETVAL> RETVAL kernel_get_workgroup_info_(
     cl_kernel kernel_id,
     cl_device_id device_id,
@@ -693,6 +700,7 @@ kernel_get_workgroup_info_<std::vector<std::size_t> >(
     throw cl_error(err, "cl error in clGetKernelWorkGroupInfo");
   }
   return buffer;
+}
 }
 
 template<int UNUSED>

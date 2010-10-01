@@ -60,6 +60,7 @@ public:
 
   mex_ref_& operator=(mxArray *ptr) {
     ptr_ = ptr;
+    return *this;
   }
 
   operator mxArray*() const {
