@@ -98,6 +98,14 @@ public:
     return dims;
   }
 
+  std::size_t get_length() const {
+    std::size_t accum = 1;
+    const std::vector<std::size_t> &dims = get_dims();
+    for(std::size_t i=0; i<dims.size(); ++i)
+      accum *= dims[i];
+    return accum;
+  }
+
   inline T* get_ptr() {
     return reinterpret_cast<T*>(ptr_);
   }
