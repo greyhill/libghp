@@ -352,6 +352,25 @@ private:
   std::size_t stride_;
 };
 
+template<GLenum TYPE>
+class vbo {
+public:
+  vbo(std::size_t size) 
+      : size_(size) {
+    CHECKED_GL_CALL(glGenBuffers, (1, &id_));
+    CHECKED_GL_CALL(glBindBuffer,
+  }
+  ~vbo() {
+    if(id_ != -1) {
+      glDeleteBuffers(1, &id_);
+    }
+  }
+
+private:
+  GLuint id_;
+  std::size_t size_;
+};
+
 #undef CHECKED_GL_CALL
 
 }
