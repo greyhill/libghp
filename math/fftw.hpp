@@ -477,7 +477,7 @@ inline void general_fftn_helper_(
 template<typename IN, typename OUT, bool FORWARD, typename S1,
     typename S2>
 inline void general_fftn_(int N, const IN &in, OUT &out, 
-    S1 in_sizes, S2 out_sizes, bool skip_size_check=false) {
+    const S1 &in_sizes, const S2 &out_sizes, bool skip_size_check=false) {
   typedef typename ghp::container_traits<IN>::value_type cpp_type;
   typedef typename cpp:type::value_type real_type;
   typedef typename cpp2fftw<cpp_type>::value_type fftw_type;

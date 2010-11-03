@@ -60,12 +60,15 @@ int main(int argc, char *argv[]) {
   gl::vbo<GL_ARRAY_BUFFER> vertex_vbo;
   gl::vbo<GL_ARRAY_BUFFER> color_vbo;
   gl::vbo<GL_ELEMENT_ARRAY_BUFFER> element_vbo;
-
-  ghp::texture<ghp::RGBA<uint8_t> > soft_texture;
-  ghp::texture<ghp::RGBA<uint8_t> > soft_texture_sized(512, 512);
   gl::texture<2, ghp::RGBA<uint8_t> > gl_texture;
-  sdl::load_texture("texture.png", soft_texture);
-  ghp::scale_texture(soft_texture, soft_texture_sized);
+
+  {
+    ghp::texture<ghp::RGBA<uint8_t> > soft_texture;
+    ghp::texture<ghp::RGBA<uint8_t> > soft_texture_sized(512, 512);
+    sdl::load_texture("texture.png", soft_texture);
+    ghp::scale_texture(soft_texture, soft_texture_sized);
+    gl_texture.write(soft_texture_sized);
+  }
 
   vertex_vbo.write(vertices, sizeof(vertices));
   color_vbo.write(colors, sizeof(colors));
