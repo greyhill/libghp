@@ -15,6 +15,7 @@
 #include <string>
 
 #include <cassert>
+#include <cmath>
 
 namespace sdl {
 
@@ -184,7 +185,7 @@ void load_ttf_font_ascii(const std::string &path, int pt_size,
   \tparam PIXELT - underlying pixel type
  */
 template<typename PIXELT>
-class soft_display {
+class soft_display_ {
 public:
   typedef PIXELT pixel_type;
 
@@ -196,7 +197,7 @@ public:
     \param height - window height
     \param fullscreen - make the window fullscreen?
    */
-  soft_display(int32_t width, int32_t height, bool fullscreen)
+  soft_display_(int32_t width, int32_t height, bool fullscreen)
       : width_(width),
       height_(height),
       fullscreen_(fullscreen),
@@ -204,7 +205,7 @@ public:
       texture_(width, height) {
     init_();
   }
-  ~soft_display() {
+  ~soft_display_() {
     SDL_Quit();
   }
 
@@ -278,6 +279,7 @@ private:
   
   ghp::texture<PIXELT> texture_;
 };
+typedef soft_display_<ghp::RGB<uint32_t> > soft_display;
 
 /**
   \brief an opengl-enabled screen from SDL
@@ -287,7 +289,11 @@ public:
   gl_display(int width, int height, bool fs)
       : width_(width),
       height_(height),
-      fullscreen_(fs) {
+      fullscreen_(fs),
+      restrict_fps_(false),
+      target_fps_(30),
+      measured_fps_(0),
+      last_ticks_(-1) {
     init_();
   }
   ~gl_display() {
@@ -300,7 +306,27 @@ public:
   }
   /** \brief update the window */
   inline void update() {
+    // swap buffers, then sleep
     SDL_GL_SwapBuffers();
+
+    // calculate fps
+    uint32_t ticks_now = SDL_GetTicks();
+    uint32_t ticks_elapsed = ticks_now - last_ticks_;
+    if(ticks_elapsed == 0) {
+      last_ticks_ = ticks_now;
+      return;
+    }
+    float seconds = ticks_elapsed / 1000.f;
+    float fps = 1.f/seconds;
+    measured_fps_ = measured_fps_*.99 + fps*.01;
+    if(restrict_fps_ && (ticks_now > last_ticks_)) {
+      uint32_t target_ticks = 1000.f/target_fps_;
+      int32_t tick_diff = target_ticks - ticks_elapsed;
+      if(tick_diff > 0) {
+        SDL_Delay(tick_diff);
+      }
+    }
+    last_ticks_ = ticks_now;
   }
 
   /** \brief gets the screen width */
@@ -312,6 +338,22 @@ public:
     return height_;
   }
 
+  inline void restrict_fps(bool b) {
+    restrict_fps_ = b;
+  }
+  inline bool restrict_fps() const {
+    return restrict_fps_;
+  }
+  inline float target_fps() const {
+    return target_fps_;
+  }
+  inline void target_fps(float f) {
+    target_fps_ = f;
+  }
+
+  inline float measured_fps() const {
+    return measured_fps_;
+  }
 private:
   inline void init_() {
     if(SDL_Init(SDL_INIT_VIDEO) == -1) {
@@ -327,6 +369,11 @@ private:
   int width_;
   int height_;
   bool fullscreen_;
+
+  bool restrict_fps_;
+  float target_fps_;
+  float measured_fps_;
+  uint32_t last_ticks_;
 };
 
 }

@@ -12,7 +12,7 @@ public:
   template<typename T2>
   inline rot_quat(const rot_quat<T2> &q);
   template<typename F>
-  inline rot_quad(const F &f) {
+  inline rot_quat(const F &f) {
     delegated_assignment<rot_quat<T>, F> ctor;
     ctor(*this, f);
   }
