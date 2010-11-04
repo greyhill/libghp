@@ -39,14 +39,15 @@ bool mouse_clicked(const sdl::mouse_button_event &evt) {
 int main(int argc, char *argv[]) {
   sdl::gl_display display(800, 600, false);
   display.set_caption("SDL Input Demo");
+  display.target_fps(30);
+  display.restrict_fps(true);
+
   sdl::input input;
   input.enable_unicode(true);
   input.quit_slot().connect( quit );
   input.keyboard_slot().connect( keypress );
   input.mouse_motion_slot().connect( mouse_move );
   input.mouse_button_slot().connect( mouse_clicked );
-  display.target_fps(30);
-  display.restrict_fps(true);
 
   ghp::vector<3, float> vertices[] = {
     vector3<float>(1, 0, 0),
@@ -74,14 +75,18 @@ int main(int argc, char *argv[]) {
   color_vbo.write(colors, sizeof(colors));
   element_vbo.write(indices, sizeof(indices));
 
+  gl::display_list dlist;
+  dlist.begin(); // default: just compile
   gl::bind_vertex(vertex_vbo);
   gl::bind_color(color_vbo);
   gl::bind_element(element_vbo);
+  gl::draw_arrays(GL_TRIANGLES, 3);
+  dlist.end();
 
   while(running) {
     input.handle_events();
 
-    gl::draw_arrays(GL_TRIANGLES, 3);
+    dlist.execute();
 
     display.update();
   }
