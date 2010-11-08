@@ -55,6 +55,7 @@ inline void init() {
     std::clog << "glew initialized, version " << glewGetString(GLEW_VERSION)
         << std::endl;
   }
+  glEnableClientState(GL_VERTEX_ARRAY);
 }
 
 /** \brief traits for converting between C++ and OpenGL types */
@@ -94,281 +95,59 @@ template<typename T> struct gl_color_from_num<4, T> {
   typedef ghp::color<ghp::RGBA<T> > value_type;
 };
 
-/** \brief special pointer for client-side buffers of vertex data.
-  supports the vertex buffer concept.
-  \tparam N - dimension: 2, 3 or 4
-  \tparam T - type: float, double or short (int16_t)
-  \tparam PTR - a pointer or smart-pointer for storing the data.
-    specializations of ghp::generic_ptr_deref may be necessary
-    to use smart pointers other than boost::shared_ptr and 
-    boost::shared_array.  default is T*
- */
-template<int N, typename T, typename PTR=T*> class vertex_ptr {
+template<GLenum TYPE, typename T>
+class vbo : boost::noncopyable {
 public:
-  typedef ghp::vector<N, T> value_type;
-  
-  /** \brief create a new vertex_ptr.
-    \param a - indexable type that stores vertex data contiguously
-      in memory
-    \param stride - extra space -- in bytes -- between adjacent 
-      vertex elements.  default is 0, meaning dense packing. */
-  template<typename A> 
-  inline vertex_ptr(A a, std::size_t stride=0) 
-      : data_(reinterpret_cast<T*>(&a[0])),
-      stride_(stride) {
-  }
-  /** \brief trivial dtor */
-  inline ~vertex_ptr() { }
-  /** \brief set this vertex buffer as active.  this function
-    modifies OpenGL state, so is not threadsafe */
-  inline void activate() {
-    assert(data_ != NULL);
-    CHECKED_GL_CALL(glEnableClientState, (GL_VERTEX_ARRAY));
-    CHECKED_GL_CALL(glVertexPointer, 
-       (N,
-        cpp2gl<T>::value,
-        stride_,
-        ghp::generic_ptr_deref<T, PTR>()(data_)));
-  }
-  /** \brief unsets this vertex buffer */
-  inline void deactivate() {
-    CHECKED_GL_CALL(glDisableClientState, (GL_VERTEX_ARRAY));
-  }
-  /** \brief reset the vertex_ptr's data pointer */
-  template<typename A> inline void reset(A a) {
-    data_ = reinterpret_cast<T*>(&a[0]);
-  }
-  /** \brief change the vertex_ptr's stride */
-  inline void set_stride(std::size_t stride) {
-    stride_ = stride;
-  }
-  /** \brief element access */
-  inline const ghp::vector<N, T>& operator()(int i) const {
-    T *base = ghp::generic_ptr_deref<T, PTR>()(data_);
-    return *reinterpret_cast<ghp::vector<N, T>*>(base+N*i);
-  }
-  /** \brief element access */
-  inline ghp::vector<N, T>& operator()(int i) {
-    T *base = ghp::generic_ptr_deref<T, PTR>()(data_);
-    return *reinterpret_cast<ghp::vector<N, T>*>(base+N*i);
-  }
-  /** \brief element access */
-  inline const ghp::vector<N, T>& operator[](int i) const {
-    return (*this)(i);
-  }
-  /** \brief element access */
-  inline ghp::vector<N, T>& operator[](int i) {
-    return (*this)(i);
-  }
-private:
-  PTR data_;
-  std::size_t stride_;
-};
-
-/** \brief special pointer for client-side buffers of normal
-  data.  supports the normal buffer concept.
-  \tparam T - type: float, double or short (int16_t)
-  \tparam PTR - a pointer or smart-pointer for storing the data.
-    specializations of ghp::generic_ptr_deref may be necessary
-    to use smart pointers other than boost::shared_ptr and 
-    boost::shared_array.  default is T*
- */
-template<typename T, typename PTR=T*> class normal_ptr {
-public:
-  typedef ghp::vector<3, T> value_type;
-
-  /** \brief create a new normal_ptr.
-    \param a - indexable type that stores vertex data contiguously
-      in memory
-    \param stride - extra space -- in bytes -- between adjacent 
-      vertex elements.  default is 0, meaning dense packing. */
-  template<typename A>
-  inline normal_ptr(A a, std::size_t stride=0)
-      : data_(reinterpret_cast<T*>(&a[0])),
-      stride_(stride) {
-  }
-  /** \brief trivial dtor */
-  inline ~normal_ptr() { }
-  /** \brief set this normal buffer as active.  this function
-    modifies OpenGL state, so is not threadsafe */
-  inline void activate() {
-    assert(data_ != NULL);
-    CHECKED_GL_CALL(glEnableClientState, (GL_NORMAL_ARRAY));
-    CHECKED_GL_CALL(glNormalPointer, 
-       (cpp2gl<T>::value,
-        stride_,
-        ghp::generic_ptr_deref<T, PTR>()(data_)));
-  }
-  /** \brief unsets this normal buffer */
-  inline void deactivate() {
-    CHECKED_GL_CALL(glDisableClientState, (GL_NORMAL_ARRAY));
-  }
-  /** \brief reset (change) the buffer's data pointer */
-  template<typename A> inline void reset(A a) {
-    data_ = reinterpret_cast<T*>(&a[0]);
-  }
-  /** \brief change the normal_ptr's stride */
-  inline void set_stride(std::size_t stride) {
-    stride_ = stride;
-  }
-  /** \brief element access */
-  inline const ghp::vector<3, T>& operator()(int i) const {
-    T *base = ghp::generic_ptr_deref<T, PTR>()(data_);
-    return *reinterpret_cast<ghp::vector<3, T>*>(base+3*i);
-  }
-  /** \brief element access */
-  inline ghp::vector<3, T>& operator()(int i) {
-    T *base = ghp::generic_ptr_deref<T, PTR>()(data_);
-    return *reinterpret_cast<ghp::vector<3, T>*>(base+3*i);
-  }
-  /** \brief element access */
-  inline const ghp::vector<3, T>& operator[](int i) const {
-    return (*this)(i);
-  }
-  /** \brief element access */
-  inline ghp::vector<3, T>& operator[](int i) {
-    return (*this)(i);
-  }
-private:
-  PTR data_;
-  std::size_t stride_;
-};
-
-/** \brief special pointer for client-side buffers of color
-  data.  supports the color buffer concept.
-  \tparam N - number of color coordinates: either 3 (RGB) or 4 (RGBA)
-  \tparam T - underlying type: uint8_t, int8_t, uint16_t, int16_t, 
-    uint32_t, int32_t, float or double
-  \tparam PTR - pointer or smart pointer type for storing the data.
-    specializations of ghp::generic_ptr_deref may be necessary
-    to use smart pointers other than boost::shared_ptr and
-    boost::shared_array.  default is T* 
- */
-template<int N, typename T, typename PTR=T*> class color_ptr {
-public:
-  typedef typename gl_color_from_num<N, T>::value_type value_type;
-
-  /** \brief create a new color_ptr
-    \param a - indexable type that stores color data contiguously
-      in memory
-    \param stride - extra space -- in bytes -- between adjacent
-      color elements.  default is 0, meaning dense packing */
-  template<typename A>
-  inline color_ptr(A a, std::size_t stride=0)
-      : data_(reinterpret_cast<T*>(&a[0])),
-      stride_(stride) {
-  }
-  /** \brief trivial destructor */
-  inline ~color_ptr() { }
-  /** \brief set this color buffer as active.  this function
-    modifies OpenGL state, so it is not threadsafe */
-  inline void activate() {
-    assert(data_ != NULL);
-    CHECKED_GL_CALL(glEnableClientState, (GL_COLOR_ARRAY));
-    CHECKED_GL_CALL(glNormalPointer, 
-       (N,
-        cpp2gl<T>::value,
-        stride_,
-        ghp::generic_ptr_deref<T, PTR>()(data_)));
-  }
-  /** \brief unsets this vertex buffer.  this function modifies
-    OpenGL state, so it is not threadsafe */
-  inline void deactivate() {
-    CHECKED_GL_CALL(glDisableClientState, (GL_VERTEX_ARRAY));
-  }
-  /** \brief reset the vertex_ptr's data pointer */
-  template<typename A> inline void reset(A a) {
-    data_ = reinterpret_cast<T*>(&a[0]);
-  }
-  /** \brief change the vertex_ptr's stride */
-  inline void set_stride(std::size_t stride) {
-    stride_ = stride;
-  }
-  /** \brief element access */
-  inline const value_type& operator()(int i) const {
-    T *base = ghp::generic_ptr_deref<T, PTR>()(data_);
-    return *reinterpret_cast<value_type*>(base+N*i);
-  }
-  /** \brief element access */
-  inline value_type& operator()(int i) {
-    T *base = ghp::generic_ptr_deref<T, PTR>()(data_);
-    return *reinterpret_cast<value_type*>(base+N*i);
-  }
-  /** \brief element access */
-  inline const value_type& operator[](int i) const {
-    return (*this)[i];
-  }
-  /** \brief element access */
-  inline value_type& operator[](int i) {
-    return (*this)[i];
-  }
-private:
-  PTR data_;
-  std::size_t stride_;
-};
-
-template<int N, typename T, typename PTR=T*> class tex_coord_ptr {
-public:
-  template<typename A>
-  inline tex_coord_ptr(A a, std::size_t stride=0) 
-      : data_(reinterpret_cast<T*>(&a[0])),
-      stride_(stride) {
-  }
-  inline ~tex_coord_ptr() { }
-  inline void activate() {
-    assert(data_ != NULL);
-    CHECKED_GL_CALL(glEnableClientState, (GL_TEXTURE_COORD_ARRAY));
-    CHECKED_GL_CALL(glTexCoordPointer, 
-       (N,
-        cpp2gl<T>::value,
-        stride_,
-        ghp::generic_ptr_deref<T, PTR>()(data_)));
-  }
-  inline void deactivate() {
-    CHECKED_GL_CALL(glDisableClientState, (GL_TEXTURE_COORD_ARRAY));
-  }
-  template<typename A> inline void reset(A a) {
-    data_ = reinterpret_cast<T*>(&a[0]);
-  }
-  inline void set_stride(std::size_t stride) {
-    stride_ = stride;
-  }
-  inline const ghp::vector<N, T>& operator()(int i) const {
-    T *base = ghp::generic_ptr_deref<T, PTR>()(data_);
-    return *reinterpret_cast<ghp::vector<N, T>*>(base+N*i);
-  }
-  inline ghp::vector<N, T>& operator()(int i) {
-    T *base = ghp::generic_ptr_deref<T, PTR>()(data_);
-    return *reinterpret_cast<ghp::vector<N, T>*>(base+N*i);
-  }
-  inline const ghp::vector<N, T>& operator[](int i) const {
-    return (*this)(i);
-  }
-  inline ghp::vector<N, T>& operator[](int i) {
-    return (*this)(i);
-  }
-private:
-  PTR data_;
-  std::size_t stride_;
-};
-
-template<GLenum TYPE>
-class vbo {
-public:
-  vbo(std::size_t size) 
-      : size_(size) {
-    CHECKED_GL_CALL(glGenBuffers, (1, &id_));
-    CHECKED_GL_CALL(glBindBuffer,
+  vbo() 
+      : id_(-1) {
+    glGenBuffersARB(1, &id_);
   }
   ~vbo() {
     if(id_ != -1) {
-      glDeleteBuffers(1, &id_);
+      glDeleteBuffersARB(1, &id_);
     }
+  }
+
+  inline GLuint id() const {
+    return id_;
+  }
+  
+  template<typename A>
+  void write(const A &a, std::size_t size, 
+      GLenum usage=GL_STATIC_DRAW) {
+    CHECKED_GL_CALL(glBindBufferARB, (TYPE, id_));
+    CHECKED_GL_CALL(glBufferDataARB, 
+       (TYPE,
+        size,
+        &a[0],
+        usage));
+  }
+  template<typename A>
+  void update(const A &a, std::size_t size,
+      std::size_t offset=0) {
+    CHECKED_GL_CALL(glBindBufferARB, (TYPE, id_));
+    CHECKED_GL_CALL(glBufferSubDataARB, 
+       (TYPE,
+        offset,
+        size,
+        &a[0]));
+  }
+private:
+  GLuint id_;
+};
+
+template<int N, typename PIXELT>
+class texture : boost::noncopyable {
+public:
+  texture();
+  ~texture();
+
+  template<typename PIXELT2>
+  void write(const ghp::texture<PIXELT2> &tex) {
   }
 
 private:
   GLuint id_;
-  std::size_t size_;
 };
 
 #undef CHECKED_GL_CALL

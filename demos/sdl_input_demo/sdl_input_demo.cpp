@@ -41,6 +41,7 @@ int main(int argc, char *argv[]) {
   display.set_caption("SDL Input Demo");
   display.target_fps(30);
   display.restrict_fps(true);
+  gl::init();
 
   sdl::input input;
   input.enable_unicode(true);
@@ -50,43 +51,27 @@ int main(int argc, char *argv[]) {
   input.mouse_button_slot().connect( mouse_clicked );
 
   ghp::vector<3, float> vertices[] = {
-    vector3<float>(1, 0, 0),
-    vector3<float>(0, 1, 0),
-    vector3<float>(-1, 0, 0) };
+    ghp::vector3<float>(1, 0, 0),
+    ghp::vector3<float>(0, 1, 0),
+    ghp::vector3<float>(-1, 0, 0) };
   ghp::color<ghp::RGBA<float> > colors[] = {
-    ghp::standard_colors<RGBA<float> >::RED,
-    ghp::standard_colors<RGBA<float> >::BLUE,
-    ghp::standard_colorS<RGBA<float> >::GREEN };
+    ghp::standard_colors<ghp::RGBA<float> >::RED,
+    ghp::standard_colors<ghp::RGBA<float> >::BLUE,
+    ghp::standard_colors<ghp::RGBA<float> >::GREEN };
   int indices[] = { 0, 1, 2 };
-  gl::vbo<GL_ARRAY_BUFFER> vertex_vbo;
-  gl::vbo<GL_ARRAY_BUFFER> color_vbo;
-  gl::vbo<GL_ELEMENT_ARRAY_BUFFER> element_vbo;
-  gl::texture<2, ghp::RGBA<uint8_t> > gl_texture;
 
-  {
-    ghp::texture<ghp::RGBA<uint8_t> > soft_texture;
-    ghp::texture<ghp::RGBA<uint8_t> > soft_texture_sized(512, 512);
-    sdl::load_texture("texture.png", soft_texture);
-    ghp::scale_texture(soft_texture, soft_texture_sized);
-    gl_texture.write(soft_texture_sized);
-  }
+  gl::vbo<GL_ARRAY_BUFFER> vertices_vbo;
+  gl::vbo<GL_ARRAY_BUFFER> colors_vbo;
+  gl::vbo<GL_ELEMENT_ARRAY_BUFFER> indices_vbo;
 
-  vertex_vbo.write(vertices, sizeof(vertices));
-  color_vbo.write(colors, sizeof(colors));
-  element_vbo.write(indices, sizeof(indices));
-
-  gl::display_list dlist;
-  dlist.begin(); // default: just compile
-  gl::bind_vertex(vertex_vbo);
-  gl::bind_color(color_vbo);
-  gl::bind_element(element_vbo);
-  gl::draw_arrays(GL_TRIANGLES, 3);
-  dlist.end();
+  vertices_vbo.write(vertices, sizeof(vertices));
+  colors_vbo.write(colors, sizeof(colors));
+  indices_vbo.write(indices, sizeof(indices));
 
   while(running) {
     input.handle_events();
 
-    dlist.execute();
+    gl::vertex_pointer(vertices_vbo);
 
     display.update();
   }
