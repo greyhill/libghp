@@ -40,6 +40,9 @@ public:
     copy(*this, f);
     return *this;
   }
+  inline void invert() const {
+    return rot_euler(angles_[0]*-1);
+  }
 
   inline const T& operator()(int i) const { return angles_[i]; }
   inline T& operator()(int i) { return angles_[i]; }

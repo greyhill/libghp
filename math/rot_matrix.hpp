@@ -3,6 +3,8 @@
 
 #include "vector.hpp"
 
+#include <iostream>
+
 namespace ghp {
 
 /**
@@ -183,9 +185,20 @@ public:
   }
 
 private:
-  T data_[N];
+  T data_[N*N];
 };
 
+}
+
+template<int N, typename T>
+std::ostream& operator<<(std::ostream &o, const ghp::rot_matrix<N, T> &m) {
+  for(int r=0; r<N; ++r) {
+    for(int c=0; c<N; ++c) {
+      o << m(r,c) << "\t";
+    }
+    o << "\n";
+  }
+  return o;
 }
 
 #endif

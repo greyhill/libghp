@@ -2,6 +2,7 @@
 #define _GHP_GFX_GL_HPP_
 
 #include "color.hpp"
+#include "texture.hpp"
 
 #include "../math.hpp"
 #include "../util.hpp"
@@ -29,20 +30,6 @@ namespace gl {
 #else
 #define CHECKED_GL_CALL(x, args) x args ;
 #endif
-
-/** \brief types of primitives that can be drawn by openGL */
-enum primitive_type {
-  POINTS,
-  LINES,
-  LINE_STRIP,
-  LINE_LOOP,
-  TRIANGLES,
-  TRIANGLE_STRIP,
-  TRIANGLE_FAN,
-  QUADS,
-  QUAD_STRIP,
-  POLYGON
-};
 
 /** \brief call this before using any other functions in this
   suite */
@@ -95,7 +82,7 @@ template<typename T> struct gl_color_from_num<4, T> {
   typedef ghp::color<ghp::RGBA<T> > value_type;
 };
 
-template<GLenum TYPE, typename T>
+template<GLenum TYPE>
 class vbo : boost::noncopyable {
 public:
   vbo() 
@@ -139,7 +126,11 @@ private:
 template<int N, typename PIXELT>
 class texture : boost::noncopyable {
 public:
-  texture();
+  texture() 
+      : id_(-1) {
+    CHECKED_GL_CALL(glGenTextures, 
+        (1, &id_));
+  }
   ~texture();
 
   template<typename PIXELT2>
@@ -149,6 +140,132 @@ public:
 private:
   GLuint id_;
 };
+
+
+namespace {
+  template<int N, typename T> struct translate_fctor { };
+
+  template<> struct translate_fctor<2, float> {
+    inline void operator()(const ghp::vector<2, float> &v) {
+      glTranslatef(v[0], v[1], 0);
+    }
+  };
+
+  template<> struct translate_fctor<3, float> {
+    inline void operator()(const ghp::vector<3, float> &v) {
+      glTranslatef(v[0], v[1], v[2]);
+    }
+  };
+
+  template<> struct translate_fctor<2, double> {
+    inline void operator()(const ghp::vector<2, double> &v) {
+      glTranslated(v[0], v[1], 0);
+    }
+  };
+
+  template<> struct translate_fctor<3, double> {
+    inline void operator()(const ghp::vector<3, double> &v) {
+      glTranslated(v[0], v[1], v[2]);
+    }
+  };
+}
+
+template<int N, typename T>
+inline void translate(const ghp::vector<N, T> &v) {
+  translate_fctor<N, T> fct;
+  fct(v);
+}
+
+template<GLenum TYPE>
+inline void bind_buffer(const vbo<TYPE> &vbo) {
+  CHECKED_GL_CALL(glBindBufferARB,
+      (TYPE, vbo.id()));
+}
+
+template<GLenum TYPE>
+inline void unbind_buffer() {
+  CHECKED_GL_CALL(glBindBufferARB,
+      (TYPE, 0));
+}
+
+template<typename T, typename PTR>
+inline void vertex_pointer(
+    size_t dim,
+    size_t stride=0,
+    const PTR &ptr=0) {
+  CHECKED_GL_CALL(glVertexPointer,
+      (dim, cpp2gl<T>::value, stride,
+      reinterpret_cast<void*>(ptr)));
+}
+
+template<typename T, typename PTR>
+inline void normal_pointer(
+    size_t stride=0,
+    const PTR &ptr=0) {
+  CHECKED_GL_CALL(glNormalPointer,
+      (cpp2gl<T>::value,
+      stride,
+      reinterpret_cast<void*>(ptr)));
+}
+
+template<typename T, typename PTR>
+inline void color_pointer(
+    size_t dim,
+    size_t stride=0,
+    const PTR &ptr=0) {
+  CHECKED_GL_CALL(glColorPointer,
+      (dim,
+      cpp2gl<T>::value,
+      stride,
+      reinterpret_cast<void*>(ptr)));
+}
+
+template<typename T, typename PTR>
+inline void draw_elements(
+    GLenum type,
+    size_t nelem,
+    const PTR &ptr) {
+  CHECKED_GL_CALL(glDrawElements,
+      (type,
+      nelem,
+      cpp2gl<T>::value,
+      reinterpret_cast<void*>(ptr)));
+}
+
+namespace {
+  template<typename T> inline void mult_matrix_(const T *t) { }
+  template<> inline void mult_matrix_<float>(const float *f) {
+    glMultMatrixf(f);
+  }
+  template<> inline void mult_matrix_<double>(const double *d) {
+    glMultMatrixd(d);
+  }
+}
+
+template<typename T> struct rotate_fctor { };
+
+template<int N, typename T>
+struct rotate_fctor<ghp::rot_matrix<N, T> > {
+  inline void operator()(const ghp::rot_matrix<N, T> &m) {
+    T tmp[16];
+    for(int r=0; r<4; ++r) {
+      for(int c=0; c<4; ++c) {
+        if( (r<N) && (c<N) ) {
+          tmp[c*4+r] = m(r,c);
+        } else {
+          tmp[c*4+r] = r==c ? 1 : 0;
+        }
+      }
+    }
+    mult_matrix_<T>(tmp);
+  }
+};
+
+template<typename T>
+inline void rotate(const T &t) {
+  rotate_fctor<T> fctor;
+  fctor(t);
+}
 
 #undef CHECKED_GL_CALL
 

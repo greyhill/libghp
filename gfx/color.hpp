@@ -264,7 +264,7 @@ public:
   inline color<PIXELT> operator*(const T &t) const {
     color<PIXELT> ret;
     for(int i=0; i<PIXELT::num_channels; ++i) {
-      ret(i) = (*this)(i) *= t;
+      ret(i) = (*this)(i) * t;
     }
     return ret;
   }

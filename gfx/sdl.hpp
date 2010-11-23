@@ -7,6 +7,9 @@
 
 #include "../math.hpp"
 
+#include <boost/thread/thread.hpp>
+#include <boost/timer.hpp>
+
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_ttf.h>
@@ -290,11 +293,9 @@ public:
       : width_(width),
       height_(height),
       fullscreen_(fs),
-      restrict_fps_(false),
-      target_fps_(30),
-      measured_fps_(0),
-      last_ticks_(-1) {
+      target_secs_per_frame_(.033) {
     init_();
+    enable_vsync(true);
   }
   ~gl_display() {
     SDL_Quit();
@@ -310,23 +311,24 @@ public:
     SDL_GL_SwapBuffers();
 
     // calculate fps
-    uint32_t ticks_now = SDL_GetTicks();
-    uint32_t ticks_elapsed = ticks_now - last_ticks_;
-    if(ticks_elapsed == 0) {
-      last_ticks_ = ticks_now;
-      return;
+    double seconds = fps_timer_.elapsed();
+    fps_timer_.restart();
+    if(seconds > 0) {
+      double fps = 1.f/seconds;
+      measured_fps_ = measured_fps_*.99 + fps*.01;
+      measured_fps_ = fps;
     }
-    float seconds = ticks_elapsed / 1000.f;
-    float fps = 1.f/seconds;
-    measured_fps_ = measured_fps_*.99 + fps*.01;
-    if(restrict_fps_ && (ticks_now > last_ticks_)) {
-      uint32_t target_ticks = 1000.f/target_fps_;
-      int32_t tick_diff = target_ticks - ticks_elapsed;
-      if(tick_diff > 0) {
-        SDL_Delay(tick_diff);
-      }
+    double tdiff = target_secs_per_frame_ - seconds;
+    if(tdiff > 0) {
+      SDL_Delay(1000 * tdiff);
+    } else if(seconds == 0) {
+      SDL_Delay(1000*target_secs_per_frame_);
     }
-    last_ticks_ = ticks_now;
+  }
+
+  /** \brief enable or disable vsync */
+  inline void enable_vsync(bool enable) {
+    SDL_GL_SetAttribute(SDL_GL_SWAP_CONTROL, enable ? 1 : 0);
   }
 
   /** \brief gets the screen width */
@@ -338,21 +340,15 @@ public:
     return height_;
   }
 
-  inline void restrict_fps(bool b) {
-    restrict_fps_ = b;
-  }
-  inline bool restrict_fps() const {
-    return restrict_fps_;
-  }
-  inline float target_fps() const {
-    return target_fps_;
-  }
-  inline void target_fps(float f) {
-    target_fps_ = f;
-  }
-
   inline float measured_fps() const {
     return measured_fps_;
+  }
+  inline void set_target_fps(float f) {
+    target_secs_per_frame_ = 1.f/f;
+  }
+
+  inline float aspect_ratio() const {
+    return static_cast<float>(width_)/static_cast<float>(height_);
   }
 private:
   inline void init_() {
@@ -370,10 +366,9 @@ private:
   int height_;
   bool fullscreen_;
 
-  bool restrict_fps_;
-  float target_fps_;
   float measured_fps_;
-  uint32_t last_ticks_;
+  float target_secs_per_frame_;
+  boost::timer fps_timer_;
 };
 
 }

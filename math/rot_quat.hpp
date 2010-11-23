@@ -8,9 +8,10 @@ namespace ghp {
 template<typename T>
 class rot_quat {
 public:
-  inline rot_quat();
+  inline rot_quat() { }
   template<typename T2>
-  inline rot_quat(const rot_quat<T2> &q);
+  inline rot_quat(const rot_quat<T2> &q) {
+  }
   template<typename F>
   inline rot_quat(const F &f) {
     delegated_assignment<rot_quat<T>, F> ctor;

@@ -50,12 +50,14 @@ public:
     for(int32_t i=0; i<N; ++i) v2.data_[i] = data_[i] - v.data_[i];
     return v2;
   }
-  inline vector operator*(const T &t) const {
+  template<typename F>
+  inline vector operator*(const F &t) const {
     vector v2;
     for(int32_t i=0; i<N; ++i) v2.data_[i] = data_[i] * t;
     return v2;
   }
-  inline vector operator/(const T &t) const {
+  template<typename F>
+  inline vector operator/(const F &t) const {
     T recip = static_cast<T>(1)/t;
     vector v2;
     for(int32_t i=0; i<N; ++i) v2.data_[i] = data_[i] * recip;
@@ -70,11 +72,13 @@ public:
     for(int32_t i=0; i<N; ++i) data_[i] -= v.data_[i];
     return *this;
   }
-  inline vector& operator*=(const T &t) {
+  template<typename F>
+  inline vector& operator*=(const F &t) {
     for(int32_t i=0; i<N; ++i) data_[i] *= t;
     return *this;
   }
-  inline vector& operator/=(const T &t) {
+  template<typename F>
+  inline vector& operator/=(const F &t) {
     T recip = static_cast<T>(1)/t;
     for(int32_t i=0; i<N; ++i) data_[i] /= t;
     return *this;
