@@ -42,7 +42,7 @@ inline void init() {
     std::clog << "glew initialized, version " << glewGetString(GLEW_VERSION)
         << std::endl;
   }
-  glEnableClientState(GL_VERTEX_ARRAY);
+  glEnable(GL_TEXTURE_2D);
 }
 
 /** \brief traits for converting between C++ and OpenGL types */
@@ -123,24 +123,57 @@ private:
   GLuint id_;
 };
 
+template<typename PIXELT> struct pixelt2gl;
+template<typename T> struct pixelt2gl<ghp::RGB<T> > {
+  static const GLuint value = GL_RGB;
+};
+template<typename T> struct pixelt2gl<ghp::RGBA<T> > {
+  static const GLuint value = GL_RGBA;
+};
+
 template<int N, typename PIXELT>
-class texture : boost::noncopyable {
+class texture { };
+
+template<typename PIXELT>
+class texture<2, PIXELT> : boost::noncopyable {
 public:
-  texture() 
+  inline texture() 
       : id_(-1) {
-    CHECKED_GL_CALL(glGenTextures, 
-        (1, &id_));
+    CHECKED_GL_CALL(glGenTextures, (1, &id_));
   }
-  ~texture();
+  inline ~texture() {
+    if(id_ != -1) {
+      CHECKED_GL_CALL(glDeleteTextures, (1, &id_));
+    }
+  }
 
   template<typename PIXELT2>
-  void write(const ghp::texture<PIXELT2> &tex) {
+  void write(const ghp::texture<PIXELT2> &tex,
+      GLuint min_filter = GL_LINEAR,
+      GLuint mag_filter = GL_LINEAR) {
+    CHECKED_GL_CALL(glBindTexture, (GL_TEXTURE_2D, id_));
+    CHECKED_GL_CALL(glTexParameteri, (GL_TEXTURE_2D,
+        GL_TEXTURE_MIN_FILTER, min_filter));
+    CHECKED_GL_CALL(glTexParameteri, (GL_TEXTURE_2D,
+        GL_TEXTURE_MAG_FILTER, mag_filter));
+    CHECKED_GL_CALL(glTexImage2D, (GL_TEXTURE_2D,
+        0,
+        pixelt2gl<PIXELT>::value,
+        tex.width(),
+        tex.height(),
+        0,
+        pixelt2gl<PIXELT2>::value,
+        cpp2gl<typename PIXELT2::value_type>::value,
+        &tex[0]));
+  }
+
+  inline GLuint id() const {
+    return id_;
   }
 
 private:
   GLuint id_;
 };
-
 
 namespace {
   template<int N, typename T> struct translate_fctor { };
@@ -188,6 +221,29 @@ inline void unbind_buffer() {
       (TYPE, 0));
 }
 
+template<int N> struct gltexdim { };
+template<> struct gltexdim<1> {
+  static const GLenum value = GL_TEXTURE_1D;
+};
+template<> struct gltexdim<2> {
+  static const GLenum value = GL_TEXTURE_2D;
+};
+template<> struct gltexdim<3> {
+  static const GLenum vlaue = GL_TEXTURE_3D;
+};
+
+template<int N, typename PIXELT>
+inline void bind_texture(const texture<N, PIXELT> &tex) {
+  CHECKED_GL_CALL(glBindTexture,
+      (gltexdim<N>::value, tex.id()));
+}
+
+template<int N>
+static inline void unbind_texture() {
+  CHECKED_GL_CALL(glBindTexture, 
+      (gltexdim<N>::value, 0));
+}
+
 template<typename T, typename PTR>
 inline void vertex_pointer(
     size_t dim,
@@ -221,10 +277,22 @@ inline void color_pointer(
 }
 
 template<typename T, typename PTR>
+inline void tex_coord_pointer(
+    size_t dim,
+    size_t stride=0,
+    const PTR &ptr=0) {
+  CHECKED_GL_CALL(glTexCoordPointer,
+      (dim,
+      cpp2gl<T>::value,
+      stride,
+      reinterpret_cast<void*>(ptr)));
+}
+
+template<typename T, typename PTR>
 inline void draw_elements(
     GLenum type,
     size_t nelem,
-    const PTR &ptr) {
+    const PTR &ptr=0) {
   CHECKED_GL_CALL(glDrawElements,
       (type,
       nelem,

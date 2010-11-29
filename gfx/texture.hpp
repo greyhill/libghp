@@ -64,18 +64,22 @@ public:
   inline int32_t get_rows() const {
     return height_;
   }
+  inline int32_t rows() const { return height_; }
   /** \brief returns the width of the texture */
   inline int32_t get_cols() const {
     return width_;
   }
+  inline int32_t cols() const { return width_; }
   /** \brief returns the width of the texture */
   inline int32_t get_width() const {
     return width_;
   }
+  inline int32_t width() const { return width_; }
   /** \brief returns the height of the texture */
   inline int32_t get_height() const {
     return height_;
   }
+  inline int32_t height() const { return height_; }
   /** \brief resizes the texture's bounds.  THIS DOES
     NOT MANIPULATE THE PIXELS IN ANY WAY.  check out 
     the texture manipulation functions for 

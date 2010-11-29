@@ -7,9 +7,6 @@
 
 #include "../math.hpp"
 
-#include <boost/thread/thread.hpp>
-#include <boost/timer.hpp>
-
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_ttf.h>
@@ -293,7 +290,8 @@ public:
       : width_(width),
       height_(height),
       fullscreen_(fs),
-      target_secs_per_frame_(.033) {
+      target_ticks_per_frame_(1000/30),
+      last_ticks_(-1) {
     init_();
     enable_vsync(true);
   }
@@ -305,25 +303,30 @@ public:
   inline void set_caption(const std::string &s) {
     SDL_WM_SetCaption(s.c_str(), NULL);
   }
-  /** \brief update the window */
-  inline void update() {
+  /** \brief update the window.  returns the number of seconds that
+    passed since the last time this method was called. */
+  inline float update() {
     // swap buffers, then sleep
     SDL_GL_SwapBuffers();
 
-    // calculate fps
-    double seconds = fps_timer_.elapsed();
-    fps_timer_.restart();
-    if(seconds > 0) {
-      double fps = 1.f/seconds;
-      measured_fps_ = measured_fps_*.99 + fps*.01;
-      measured_fps_ = fps;
+    const uint32_t ticks_now = SDL_GetTicks();
+    const uint32_t ticks_diff = ticks_now - last_ticks_;
+    if(last_ticks_ != -1) {
+      if(ticks_diff != 0) {
+        float this_fps = 1000. / static_cast<float>(ticks_diff);
+        measured_fps_ = .99f*measured_fps_ + .01f*this_fps; // TODO: smooth with IIR filter
+        const int32_t sleep_ticks = target_ticks_per_frame_ - ticks_diff;
+        if(sleep_ticks > 0) {
+          SDL_Delay(sleep_ticks);
+        }
+      } else {
+        /* put up a warning here?  my laptop won't get here,
+          but I relize it's becoming increasingly likely... */
+      }
     }
-    double tdiff = target_secs_per_frame_ - seconds;
-    if(tdiff > 0) {
-      SDL_Delay(1000 * tdiff);
-    } else if(seconds == 0) {
-      SDL_Delay(1000*target_secs_per_frame_);
-    }
+    const uint32_t true_ticks_diff = SDL_GetTicks() - last_ticks_;
+    last_ticks_ = ticks_now;
+    return static_cast<float>(true_ticks_diff) / 1000.f;
   }
 
   /** \brief enable or disable vsync */
@@ -344,7 +347,7 @@ public:
     return measured_fps_;
   }
   inline void set_target_fps(float f) {
-    target_secs_per_frame_ = 1.f/f;
+    target_ticks_per_frame_ = 1000/f;
   }
 
   inline float aspect_ratio() const {
@@ -367,8 +370,8 @@ private:
   bool fullscreen_;
 
   float measured_fps_;
-  float target_secs_per_frame_;
-  boost::timer fps_timer_;
+  float target_ticks_per_frame_;
+  uint32_t last_ticks_;
 };
 
 }
