@@ -163,9 +163,9 @@ public:
   /** \brief element access */
   inline void set_height(int i) { height_ = i; }
   /** \brief element access */
-  inline int get_ascend() const { return ascend_; }
+  inline int get_ascent() const { return ascent_; }
   /** \brief element access */
-  inline void set_ascend(int i) { ascend_ = i; }
+  inline void set_ascent(int i) { ascent_ = i; }
   /** \brief element access */
   inline int get_descent() const { return descent_; }
   /** \brief element access */
@@ -178,7 +178,7 @@ public:
 private:
   std::map<K, boost::shared_ptr<glyph_type> > glyphs_;
   int height_;
-  int ascend_;
+  int ascent_;
   int descent_;
   int line_skip_;
 };

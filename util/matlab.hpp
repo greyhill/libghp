@@ -67,6 +67,30 @@ public:
     return ptr_;
   }
 
+  std::vector<std::size_t> get_dims() const {
+    std::vector<std::size_t> dims;
+    std::size_t num_dims = mxGetNumberOfDimensions(ptr_);
+    dims.resize(num_dims);
+    const mwSize *ml_dims = mxGetDimensions(ptr_);
+    for(std::size_t i=0; i<num_dims; ++i) dims[i] = ml_dims[i];
+    return dims;
+  }
+
+  std::size_t get_length() const {
+    std::size_t accum = 1;
+    const std::vector<std::size_t> &dims = get_dims();
+    for(std::size_t i=0; i<dims.size(); ++i)
+      accum *= dims[i];
+    return accum;
+  }
+
+  std::string str() const {
+    std::size_t length = get_length() + 1;
+    std::vector<char> buf(length);
+    mxGetString(ptr_, &buf[0], length);
+    return std::string(&buf[0]);
+  }
+
 protected:
   mxArray *ptr_;
 };
@@ -89,23 +113,6 @@ public:
   ~typed_array() {
   }
 
-  std::vector<std::size_t> get_dims() const {
-    std::vector<std::size_t> dims;
-    std::size_t num_dims = mxGetNumberOfDimensions(ptr_);
-    dims.resize(num_dims);
-    const mwSize *ml_dims = mxGetDimensions(ptr_);
-    for(std::size_t i=0; i<num_dims; ++i) dims[i] = ml_dims[i];
-    return dims;
-  }
-
-  std::size_t get_length() const {
-    std::size_t accum = 1;
-    const std::vector<std::size_t> &dims = get_dims();
-    for(std::size_t i=0; i<dims.size(); ++i)
-      accum *= dims[i];
-    return accum;
-  }
-
   inline T* get_ptr() {
     return reinterpret_cast<T*>(ptr_);
   }
@@ -114,6 +121,12 @@ public:
   }
   inline T* imag_ptr() {
     return reinterpret_cast<T*>(mxGetImagData(ptr_));
+  }
+  inline T& real(int i) {
+    return real_ptr()[i];
+  }
+  inline T& imag(int i) {
+    return imag_ptr()[i];
   }
 
   typed_array& operator=(const typed_array &r) {

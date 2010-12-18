@@ -145,10 +145,10 @@ void load_ttf_font_ascii(const std::string &path, int pt_size,
   }
 
   // determine font characteristics
-  font.set_height(TTF_GetHeight(font));
-  font.set_ascent(TTF_GetAscent(font));
-  font.set_descent(TTF_GetDescent(font));
-  font.set_line_skip(TTF_FontLineSkip(font));
+  font.set_height(TTF_FontHeight(ttf_font));
+  font.set_ascent(TTF_FontAscent(ttf_font));
+  font.set_descent(TTF_FontDescent(ttf_font));
+  font.set_line_skip(TTF_FontLineSkip(ttf_font));
 
   ghp::color<ghp::RGB<uint8_t> > color_temp = color;
   SDL_Color sdl_color = { 

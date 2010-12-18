@@ -373,7 +373,7 @@ public:
       : id_(NULL) {
     int err;
     std::vector<device_ref> devices;
-    devices.insert(device_begin, device_end);
+    devices.insert(devices.begin(), device_begin, device_end);
     cl_context_properties context_props[] =
         { CL_CONTEXT_PLATFORM,
         reinterpret_cast<cl_context_properties>(platform.id()),
@@ -389,7 +389,7 @@ public:
     }
   }
   inline ~context_ref_() {
-#ifndef NDEBUG
+#ifdef CLREFCOUNT
     uint32_t refcount;
     clGetContextInfo(id_,
         CL_CONTEXT_REFERENCE_COUNT,
@@ -433,7 +433,7 @@ public:
     clRetainEvent(id_);
   }
   inline ~event_ref_() {
-#ifndef NDEBUG
+#ifdef CLREFCOUNT
     uint32_t refcount;
     clGetEventInfo(id_,
         CL_EVENT_REFERENCE_COUNT,
@@ -529,7 +529,7 @@ public:
     clRetainMemObject(id_);
   }
   inline ~buffer_ref_() {
-#ifndef NDEBUG
+#ifdef CLREFCOUNT
     uint32_t refcount;
     clGetMemObjectInfo(
         id_,
@@ -586,7 +586,7 @@ public:
     }
   }
   inline ~program_ref_() {
-#ifndef NDEBUG
+#ifdef CLREFCOUNT
     uint32_t refcount;
     clGetProgramInfo(id_,
         CL_PROGRAM_REFERENCE_COUNT,
@@ -714,7 +714,7 @@ public:
     clRetainKernel(id_);
   }
   inline ~kernel_ref_() { 
-#ifndef NDEBUG
+#ifdef CLREFCOUNT
     uint32_t refcount;
     clGetKernelInfo(id_,
         CL_KERNEL_REFERENCE_COUNT,
@@ -816,7 +816,7 @@ public:
     }
   }
   inline ~command_queue_ref_() {
-#ifndef NDEBUG
+#ifdef CLREFCOUNT
     uint32_t refcount;
     clGetCommandQueueInfo(id_,
         CL_QUEUE_REFERENCE_COUNT,
@@ -999,7 +999,7 @@ public:
     cl_event event;
     int err;
     std::vector<event_ref> events;
-    events.insert(wait_begin, wait_end);
+    events.insert(events.begin(), wait_begin, wait_end);
     err = clEnqueueNDRangeKernel(id_,
         kernel.id(),
         work_dim,
