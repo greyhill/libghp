@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
   glEnableClientState(GL_VERTEX_ARRAY);
   glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
-  ghp::texture<ghp::RGB<uint8_t> > raw_pic;
+  ghp::texture<ghp::RGBA<uint8_t> > raw_pic;
   sdl::load_image(img_name, raw_pic);
   
   gl::texture<2, ghp::RGB<uint8_t> > texture;

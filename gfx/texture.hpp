@@ -36,6 +36,17 @@ public:
       height_(height),
       data_(new color<PIXELT>[width*height]) {
   }
+  template<typename T>
+  texture(int32_t width, int32_t height, const T *t) 
+      : width_(width),
+      height_(height),
+      data_(new color<PIXELT>[width_*height_]) {
+    const color<PIXELT> *p = reinterpret_cast<const color<PIXELT>*>(t);
+    std::copy(
+      p,
+      p + width_*height_,
+      &data_[0]);
+  }
   /** \brief copy constructor */
   texture(const texture &t) 
       : width_(t.width_),
