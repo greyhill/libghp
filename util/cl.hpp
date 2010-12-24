@@ -638,7 +638,7 @@ public:
       throw cl_error(err, "error sizing CL build log");
     }
     std::string to_return;
-    to_return.reserve(log_size+1);
+    to_return.resize(log_size+1);
     err = clGetProgramBuildInfo(id_,
         d.id(),
         CL_PROGRAM_BUILD_LOG,
