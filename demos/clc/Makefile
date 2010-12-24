@@ -17,6 +17,12 @@ ${OUT}: ${OBJS}
 	${CXX} ${CXXFLAGS} -lOpenCL \
 		-lboost_program_options $^ -o $@
 
+install:
+	cp ${OUT} /usr/bin
+
+deinstall:
+	rm /usr/bin/${OUT}
+
 clean:
 	${RM} ${OUT} ${OBJS}
 
