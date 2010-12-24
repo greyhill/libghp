@@ -600,6 +600,7 @@ public:
   }
 
   inline void build(const std::string &compiler_opts="") {
+    std::size_t num_chars;
     int err = clBuildProgram(id_,
         0, NULL,
         compiler_opts.c_str(),
@@ -623,6 +624,31 @@ public:
       throw cl_error(err, "error building CL program for specific "
           "devices");
     }
+  }
+
+  inline std::string get_build_log(const device_ref &d) {
+    std::size_t log_size;
+    int err = clGetProgramBuildInfo(id_,
+        d.id(),
+        CL_PROGRAM_BUILD_LOG,
+        0,
+        NULL,
+        &log_size);
+    if(err != CL_SUCCESS) {
+      throw cl_error(err, "error sizing CL build log");
+    }
+    std::string to_return;
+    to_return.reserve(log_size+1);
+    err = clGetProgramBuildInfo(id_,
+        d.id(),
+        CL_PROGRAM_BUILD_LOG,
+        log_size,
+        &to_return[0],
+        NULL);
+    if(err != CL_SUCCESS) {
+      throw cl_error(err, "error getting CL build log");
+    }
+    return to_return;
   }
 
   class kernel_ref_<0> get_kernel(const std::string &kernel_name);
