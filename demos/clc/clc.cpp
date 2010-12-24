@@ -17,6 +17,7 @@ int main(int argc, char *argv[]) {
       ("output,o", po::value<std::string>(), "output file")
       ("platform,p", po::value<unsigned>(), "set platform")
       ("device,d", po::value<unsigned>(), "set device")
+      ("options,c", po::value<std::string>(), "compile options")
       ("help,h", "print this help message")
       ("list,l", "list platforms and devices");
 
@@ -61,6 +62,7 @@ int main(int argc, char *argv[]) {
 
   std::string input_path;
   std::string output_path;
+  std::string options;
   bool do_output = false;
   unsigned platform_id = 0;
   unsigned device_id = 0;
@@ -80,6 +82,9 @@ int main(int argc, char *argv[]) {
   }
   if(vm.count("device")) {
     device_id = vm["device"].as<unsigned>();
+  }
+  if(vm.count("options")) {
+    options = vm["options"].as<std::string>();
   }
 
   std::stringstream ss;
@@ -110,8 +115,9 @@ int main(int argc, char *argv[]) {
   cl::program_ref program(context, ss.str());
   std::cout << "context is " << platform.name() << "/"
     << device.name() << "\n";
+  std::cout << "OpenCL compiler options: " << options << "\n";
   try {
-    program.build();
+    program.build(options);
     std::cout << "build successful!\n";
   } catch(const cl::cl_error &c) {
     std::cout << "error building program\n";
