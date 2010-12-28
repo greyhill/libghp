@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
   desc.add_options()
       ("input,i", po::value<std::string>(), "input file")
       ("output,o", po::value<std::string>(), "output file")
-      ("header,e", "produce cpp/header file on successful compilation")
+      ("cpp,p", "produce cpp/header file on successful compilation")
       ("platform,p", po::value<unsigned>(), "set platform")
       ("device,d", po::value<unsigned>(), "set device")
       ("options,c", po::value<std::string>(), "compile options")
