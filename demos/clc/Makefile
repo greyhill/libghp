@@ -15,7 +15,7 @@ OUT=clc
 
 ${OUT}: ${OBJS}
 	${CXX} ${CXXFLAGS} -lOpenCL \
-		-lboost_program_options $^ -o $@
+		-lboost_program_options -lboost_regex $^ -o $@
 
 install:
 	cp ${OUT} /usr/bin

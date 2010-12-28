@@ -4,7 +4,9 @@ CLINCLUDE=-I${ATISTREAMSDKROOT}/include/CL \
 	-L${ATISTREAMSDKROOT}/lib/x86
 else
 CLINCLUDE=-I/usr/include/nvidia-current \
-	-I/usr/include/nvidia-current/CL
+	-I/usr/include/nvidia-current/CL \
+	-I/usr/include/GL \
+	-I/usr/include/SDL
 endif
 
 CXX=g++
@@ -14,7 +16,7 @@ OBJS=cl_demo.o
 OUT=cl_demo
 
 ${OUT}: ${OBJS}
-	${CXX} ${CXXFLAGS} -lOpenCL $^ -o $@
+	${CXX} ${CXXFLAGS} -lOpenCL -lGL -lSDL -lGLU -lGLEW $^ -o $@
 
 clean:
 	${RM} ${OUT} ${OBJS}

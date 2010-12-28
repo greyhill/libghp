@@ -1,7 +1,14 @@
 #ifndef _GHP_UTIL_CL_HPP_
 #define _GHP_UTIL_CL_HPP_
 
+// OpenCL / OpenGL interop wrapper
+#ifdef _GHP_GFX_GL_HPP_
+#include "cl_gl.hpp"
+#endif
+
 #include <cl.h>
+
+#include "../math.hpp"
 
 #include <boost/function.hpp>
 #include <boost/noncopyable.hpp>
@@ -23,7 +30,9 @@ template<int UNUSED> class device_ref_;
 template<int UNUSED> class context_ref_;
 template<int UNUSED> class event_ref_;
 template<int UNUSED> class command_queue_ref_;
+template<int UNUSED> class buffer_ref_base_;
 template<int UNUSED> class buffer_ref_;
+template<int UNUSED> class image2d_ref_;
 template<int UNUSED> class program_ref_;
 template<int UNUSED> class kernel_ref_;
 
@@ -33,7 +42,9 @@ typedef device_ref_<0> device_ref;
 typedef context_ref_<0> context_ref;
 typedef event_ref_<0> event_ref;
 typedef command_queue_ref_<0> command_queue_ref;
+typedef buffer_ref_base_<0> buffer_ref_base;
 typedef buffer_ref_<0> buffer_ref;
+typedef image2d_ref_<0> image2d_ref;
 typedef program_ref_<0> program_ref;
 typedef kernel_ref_<0> kernel_ref;
 
@@ -480,14 +491,48 @@ private:
 };
 
 template<int UNUSED>
-class buffer_ref_ {
+class buffer_ref_base_ {
+public:
+  inline buffer_ref_base_()
+      : id_(NULL) {
+  }
+  inline buffer_ref_base_(const buffer_ref_base_ &r)
+      : id_(r.id_) {
+    clRetainMemObject(id_);
+  }
+
+  inline ~buffer_ref_base_() {
+    clReleaseMemObject(id_);
+  }
+
+  inline bool operator==(const buffer_ref_base_ &r) const {
+    return id_ == r.id_;
+  }
+  inline buffer_ref_base_& operator=(const buffer_ref_base_ &r) {
+    if(id_ != r.id_) {
+      clReleaseMemObject(id_);
+      id_ = r.id_;
+      clRetainMemObject(id_);
+    }
+    return *this;
+  }
+
+  inline cl_mem id() const {
+    return id_;
+  }
+
+private:
+  cl_mem id_;
+};
+
+template<int UNUSED>
+class buffer_ref_ : public buffer_ref_base {
 public:
   buffer_ref_(context_ref context,
       std::size_t size,
       bool kernel_can_read = true,
       bool kernel_can_write = true,
-      bool mappable = false)
-      : id_(NULL) {
+      bool mappable = false) {
     int err;
     id_ = clCreateBuffer(context.id(),
           ((kernel_can_read && kernel_can_write) ? CL_MEM_READ_WRITE : 0) |
@@ -507,8 +552,7 @@ public:
       std::size_t size,
       bool kernel_can_read = true,
       bool kernel_can_write = true,
-      bool mappable = false)
-      : id_(NULL) {
+      bool mappable = false) {
     int err;
     id_ = clCreateBuffer(context.id(),
           ((kernel_can_read && kernel_can_write) ? CL_MEM_READ_WRITE : 0) |
@@ -524,43 +568,68 @@ public:
     }
   }
 
-  inline buffer_ref_(const buffer_ref_ &r)
-      : id_(r.id_) {
+  inline buffer_ref_(const buffer_ref_ &r) {
+    id_ = r.id_;
     clRetainMemObject(id_);
   }
-  inline ~buffer_ref_() {
-#ifdef CLREFCOUNT
-    uint32_t refcount;
-    clGetMemObjectInfo(
-        id_,
-        CL_MEM_REFERENCE_COUNT,
-        sizeof(refcount),
-        &refcount,
-        NULL);
-    std::cerr << "buffer_ref dtor; refcount: " << 
-        (refcount-1) << std::endl;
-#endif
-    clReleaseMemObject(id_);
-  }
+};
 
-  bool operator==(const buffer_ref_ &r) const {
-    return id_ != r.id_;
-  }
-  buffer_ref_& operator=(const buffer_ref_ &r) {
-    if(id_ != r.id_) {
-      clReleaseMemObject(id_);
-      id_ = r.id_;
-      clRetainMemObject(id_);
+template<int UNUSED>
+class image2d_ref_ : public buffer_ref_base {
+public:
+  image2d_ref_(context_ref context,
+      const cl_image_format &format,
+      std::size_t width,
+      std::size_t height,
+      bool kernel_can_read = true,
+      bool kernel_can_write = true,
+      bool mappable = false) {
+    int err;
+    id_ = clCreateImage2D(context.id(),
+        ((kernel_can_read && kernel_can_write) ? CL_MEM_READ_WRITE : 0 ) |
+        ((!kernel_can_read && kernel_can_write) ? CL_MEM_WRITE_ONLY : 0 ) |
+        ((kernel_can_read && !kernel_can_write) ? CL_MEM_READ_ONLY : 0 ) | 
+        (mappable ? CL_MEM_ALLOC_HOST_PTR : 0),
+        &format,
+        width,
+        height,
+        0,
+        NULL,
+        &err);
+    if(err != CL_SUCCESS) {
+      throw cl_error(err, "error creating cl image2d");
     }
-    return *this;
+  }
+  template<typename T>
+  image2d_ref_(context_ref context,
+      const cl_image_format &format,
+      T *buffer,
+      std::size_t width,
+      std::size_t height,
+      bool kernel_can_read = true,
+      bool kernel_can_write = true,
+      bool mappable = false) {
+    int err;
+    id_ = clCreateImage2D(context.id(),
+        ((kernel_can_read && kernel_can_write) ? CL_MEM_READ_WRITE : 0 ) |
+        ((!kernel_can_read && kernel_can_write) ? CL_MEM_WRITE_ONLY : 0) |
+        ((kernel_can_read && !kernel_can_write) ? CL_MEM_READ_ONLY : 0) |
+        (mappable ? CL_MEM_ALLOC_HOST_PTR : 0),
+        &format,
+        width,
+        height,
+        0,
+        reinterpret_cast<void*>(buffer),
+        &err);
+    if(err != CL_SUCCESS) {
+      throw cl_error(err, "error creating cl image2d");
+    }
   }
 
-  inline cl_mem id() const { 
-    return id_;
+  inline image2d_ref_(const image2d_ref_ &r) {
+    id_ = r.id_;
+    clRetainMemObject(id_);
   }
-
-private:
-  cl_mem id_;
 };
 
 template<int UNUSED>
@@ -909,6 +978,56 @@ public:
     return event_ref(event);
   }
 
+  event_ref read_image2d(image2d_ref buffer, 
+      void *dest,
+      const ghp::vector<2, std::size_t> &size,
+      bool blocking = false,
+      const ghp::vector<2, std::size_t> &offset = 
+          ghp::vector2<std::size_t>(0,0)) {
+    cl_event event;
+    int err;
+    err = clEnqueueReadImage(id_,
+        buffer.id(),
+        blocking,
+        &offset[0],
+        &size[0],
+        0,
+        0,
+        dest,
+        0, NULL,
+        &event);
+    if(err != CL_SUCCESS) {
+      throw cl_error(err, "error enqueueing cl image2d read");
+    }
+    return event_ref(event);
+  }
+
+  template<typename ITER1, typename ITER2>
+  event_ref read_image2d(image2d_ref buffer,
+      void *dest,
+      const ghp::vector<2, std::size_t> &size,
+      ITER1 wait_begin, ITER2 wait_end,
+      bool blocking = false,
+      const ghp::vector<2, std::size_t> &offset =
+          ghp::vector2<std::size_t>(0,0)) {
+    cl_event event;
+    std::vector<event_ref> events;
+    events.insert(events.begin(), wait_begin, wait_end);
+    int err;
+    err = clEnqueueReadImage(id_,
+        buffer.id(),
+        blocking,
+        &offset[0],
+        &size[0],
+        0,0,
+        dest,
+        events.size(), reinterpret_cast<cl_event*>(&events[0]),
+        &event);
+    if(err != CL_SUCCESS) {
+      throw cl_error(err, "error enqueueing cl buffer read");
+    }
+  }
+
   event_ref write_buffer(buffer_ref buffer, std::size_t size,
       void *src, 
       bool blocking=false, 
@@ -947,6 +1066,58 @@ public:
         &event);
     if(err != CL_SUCCESS) {
       throw cl_error(err, "error enqueueing cl buffer write");
+    }
+    return event_ref(event);
+  }
+
+  event_ref write_image2d(buffer_ref buffer,
+      const ghp::vector<2, std::size_t> &size, 
+      void *src,
+      bool blocking=false,
+      const ghp::vector<2, std::size_t> &offset = 
+          ghp::vector2<std::size_t>(0,0)) {
+    cl_event event;
+    int err;
+    err = clEnqueueWriteImage(id_,
+        buffer.id(),
+        blocking,
+        &offset[0],
+        &size[0],
+        0,
+        0,
+        src,
+        0, NULL,
+        &event);
+    if(err != CL_SUCCESS) {
+      throw cl_error(err, "error enqueueing image2d write");
+    }
+    return event_ref(event);
+  }
+
+  template<typename ITER1, typename ITER2>
+  event_ref write_image2d(buffer_ref buffer,
+      const ghp::vector<2, std::size_t> &size,
+      void *src,
+      ITER1 event_begin, ITER2 event_end,
+      bool blocking = false,
+      const ghp::vector<2, std::size_t> &offset =
+          ghp::vector2<std::size_t>(0,0)) {
+    cl_event event;
+    int err;
+    std::vector<cl::event_ref> events;
+    events.insert(events.begin(), event_begin, event_end);
+    err = clEnqueueWriteImage(id_,
+        buffer.id(),
+        blocking,
+        &offset[0],
+        &size[0],
+        0,0,
+        src,
+        events.size(), 
+        reinterpret_cast<cl_event*>(&events[0]),
+        &event);
+    if(err != CL_SUCCESS) {
+      throw cl_error(err, "error enqueueing cl image write");
     }
     return event_ref(event);
   }
@@ -1040,7 +1211,6 @@ public:
     }
     return event_ref(event);
   }
-
 private:
   cl_command_queue id_;
 };

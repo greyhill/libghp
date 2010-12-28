@@ -14,6 +14,11 @@
 #include <cassert>
 #include <iostream>
 
+// OpenCL / OpenGL interop wrapper
+#ifdef _GHP_UTIL_CL_HPP_
+#include "../util/cl_gl.hpp"
+#endif
+
 namespace gl {
 
 /* if NDEBUG (the C assert library's debug macro) is defined,

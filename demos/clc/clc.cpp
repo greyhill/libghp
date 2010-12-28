@@ -1,6 +1,7 @@
 #include <ghp/util/cl.hpp>
 
 #include <boost/program_options.hpp>
+#include <boost/regex.hpp>
 
 #include <exception>
 #include <fstream>
@@ -15,6 +16,7 @@ int main(int argc, char *argv[]) {
   desc.add_options()
       ("input,i", po::value<std::string>(), "input file")
       ("output,o", po::value<std::string>(), "output file")
+      ("header,e", "produce cpp/header file on successful compilation")
       ("platform,p", po::value<unsigned>(), "set platform")
       ("device,d", po::value<unsigned>(), "set device")
       ("options,c", po::value<std::string>(), "compile options")
@@ -119,6 +121,50 @@ int main(int argc, char *argv[]) {
   try {
     program.build(options);
     std::cout << "build successful!\n";
+
+    if(vm.count("header")) {
+      // blah
+      std::string file_base = input_path.substr(0, input_path.find('.'));
+  
+      // write header
+      std::stringstream filess;
+      filess << input_path << ".hpp";
+      std::ofstream header_out(filess.str().c_str());
+      filess.str("");
+      filess << "#ifndef _" << file_base << "_OPENCL_HPP_" << "\n";
+      filess << "#define _" << file_base << "_OPENCL_HPP_" << "\n";
+      filess << "\n";
+      filess << "extern const char *" << file_base << "_opencl_source;" << "\n";
+      filess << "\n";
+      filess << "#endif\n\n";
+      header_out << filess.str();
+      header_out.close();
+  
+      // write cpp file
+      boost::regex rx;
+      rx.assign(
+        "(\\\\)|"
+        "(\")");
+      const char *format = 
+        "(?1\\\\\\\\)"
+        "(?2\\\\\")";
+
+      filess.str("");
+      filess << input_path << ".cpp";
+      std::ofstream source_out(filess.str().c_str());
+      std::ifstream source_in(input_path.c_str());
+      filess.str("");
+      filess << "const char *" << file_base << "_opencl_source = " << "\n";
+      while(getline(source_in, line)) {
+        std::string sanitized_line = 
+          boost::regex_replace(line, rx, format, 
+            boost::match_default | boost::format_all);
+        filess << "\t\"" << sanitized_line << "\\n\"\n";
+      }
+      filess << ";";
+      source_out << filess.str();
+      source_out.close();
+    }
   } catch(const cl::cl_error &c) {
     std::cout << "error building program\n";
   }
