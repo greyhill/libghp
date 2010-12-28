@@ -1,5 +1,7 @@
 #include <ghp/util/cl.hpp>
 
+#include <boost/algorithm/string.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <boost/regex.hpp>
 
@@ -11,12 +13,13 @@
 
 int main(int argc, char *argv[]) {
   namespace po = boost::program_options;
+  namespace fs = boost::filesystem;
 
   po::options_description desc("Allowed options");
   desc.add_options()
       ("input,i", po::value<std::string>(), "input file")
       ("output,o", po::value<std::string>(), "output file")
-      ("cpp,p", "produce cpp/header file on successful compilation")
+      ("cpp,x", "produce cpp/header file on successful compilation")
       ("platform,p", po::value<unsigned>(), "set platform")
       ("device,d", po::value<unsigned>(), "set device")
       ("options,c", po::value<std::string>(), "compile options")
@@ -123,16 +126,18 @@ int main(int argc, char *argv[]) {
     std::cout << "build successful!\n";
 
     if(vm.count("header")) {
-      // blah
-      std::string file_base = input_path.substr(0, input_path.find('.'));
+      fs::path input_path_obj(input_path);
+      std::string file_base = input_path_obj.stem();
+      std::string file_base_upper = file_base;
+      boost::to_upper(file_base_upper);
   
       // write header
       std::stringstream filess;
       filess << input_path << ".hpp";
       std::ofstream header_out(filess.str().c_str());
       filess.str("");
-      filess << "#ifndef _" << file_base << "_OPENCL_HPP_" << "\n";
-      filess << "#define _" << file_base << "_OPENCL_HPP_" << "\n";
+      filess << "#ifndef _" << file_base_upper << "_OPENCL_HPP_" << "\n";
+      filess << "#define _" << file_base_upper << "_OPENCL_HPP_" << "\n";
       filess << "\n";
       filess << "extern const char *" << file_base << "_opencl_source;" << "\n";
       filess << "\n";
