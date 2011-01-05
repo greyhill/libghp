@@ -126,6 +126,44 @@ private:
   T data_[4];
 };
 
+template<int N, typename BasePixelT>
+class Single {
+public:
+  typedef typename BasePixelT::value_type value_type;
+  enum { num_channels = 1 };
+  enum { bytes_per_pixel = num_channels * sizeof(value_type) };
+
+  Single() {
+    data_ = color_traits<value_type>::min_value();
+  }
+  Single(value_type v)
+      : data_(v) {
+  }
+  ~Single() {
+  }
+
+  inline value_type& value() { return data_; }
+  inline const value_type& value() const { return data_; }
+
+  inline value_type& operator()(uint8_t i) { 
+    assert(i < 1);
+    return data_; 
+  }
+  inline const value_type& operator()(uint8_t i) const {
+    assert(i < 1);
+    return data_;
+  }
+  inline value_type& operator[](uint8_t i) {
+    return (*this)(i);
+  }
+  inline const value_type& operator[](uint8_t i) const {
+    return (*this)(i);
+  }
+
+private:
+  value_type data_;
+};
+
 // template-specialize this functor for more sophisticated
 // conversions, e.g. between CMY and RGB.  specializations
 // will be automatically picked up by color<>'s cast
@@ -173,6 +211,25 @@ struct convert_color<color<RGB<T1> >, color<RGBA<T2> > > {
       );
     }
     dest.alpha() = color_traits<T2>::max_value();
+  }
+};
+
+template<int N, typename PIXELT1, typename PIXELT2>
+struct convert_color<color<PIXELT1>, color<Single<N, PIXELT2> > > {
+  inline void operator()(const color<PIXELT1> &src,
+      color<Single<N, PIXELT2> > &dest) {
+    color<PIXELT2> tmp = src;
+    dest.value() = tmp[N];
+  }
+};
+
+template<int N, typename PIXELT1, typename PIXELT2>
+struct convert_color<color<Single<N, PIXELT1> >, color<PIXELT2> > {
+  inline void operator()(const color<Single<N, PIXELT1> > &src,
+      color<PIXELT2> &dest) {
+    color<PIXELT1> tmp;
+    tmp[N] = src.value();
+    dest = tmp;
   }
 };
 

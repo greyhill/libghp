@@ -1,4 +1,4 @@
-CXX=clang++
+CXX=g++
 CXXFLAGS=-g3 -Wall -Wextra \
 		-I/usr/include/SDL -I/usr/include/GL
 LIBARGS=-lSDL -lSDL_image -lGL -lGLU -lGLEW 

@@ -82,6 +82,9 @@ void convert_surface(SDL_Surface *surf, TEX &dest) {
 template<typename PIXELT>
 void load_image(const std::string &path, ghp::texture<PIXELT> &dest) {
   SDL_Surface *surf = IMG_Load(path.c_str());
+  if(surf == NULL) {
+    throw std::runtime_error("couldn't open image for loading");
+  }
   convert_surface(surf, dest);
   SDL_FreeSurface(surf);
 }
@@ -352,6 +355,11 @@ public:
 
   inline float aspect_ratio() const {
     return static_cast<float>(width_)/static_cast<float>(height_);
+  }
+
+  inline void grab_mouse(bool b) {
+    SDL_WM_GrabInput(b ? SDL_GRAB_ON : SDL_GRAB_OFF);
+    SDL_ShowCursor(b ? SDL_DISABLE : SDL_ENABLE);
   }
 private:
   inline void init_() {

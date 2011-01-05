@@ -14,11 +14,6 @@
 #include <cassert>
 #include <iostream>
 
-// OpenCL / OpenGL interop wrapper
-#ifdef _GHP_UTIL_CL_HPP_
-#include "../util/cl_gl.hpp"
-#endif
-
 namespace gl {
 
 /* if NDEBUG (the C assert library's debug macro) is defined,
@@ -34,6 +29,17 @@ namespace gl {
 };
 #else
 #define CHECKED_GL_CALL(x, args) x args ;
+#endif
+
+#ifndef NDEBUG
+#define CHECK_GL { \
+  GLenum gl_err_ = glGetError(); \
+  if(gl_err_ != GL_NO_ERROR) { \
+    throw std::runtime_error((char*)gluErrorString(gl_err_)); \
+  } \
+}; 
+#else
+#define CHECK_GL ;
 #endif
 
 /** \brief call this before using any other functions in this
@@ -75,17 +81,6 @@ template<int N> const GLenum cpp2gl<float, N>::value = GL_FLOAT;
 
 template<int N> struct cpp2gl<double, N> { static const GLenum value; };
 template<int N> const GLenum cpp2gl<double, N>::value = GL_DOUBLE;
-
-/** \brief type traits for retreiving OpenGL color format based on the
-  number of bytes per pixel.  OpenGL supports only RGB and RGBA colors in
-  the fixed-function pipeline. */
-template<int N, typename T> struct gl_color_from_num { };
-template<typename T> struct gl_color_from_num<3, T> {
-  typedef ghp::color<ghp::RGB<T> > value_type;
-};
-template<typename T> struct gl_color_from_num<4, T> {
-  typedef ghp::color<ghp::RGBA<T> > value_type;
-};
 
 template<GLenum TYPE>
 class vbo : boost::noncopyable {
@@ -135,6 +130,27 @@ template<typename T> struct pixelt2gl<ghp::RGB<T> > {
 template<typename T> struct pixelt2gl<ghp::RGBA<T> > {
   static const GLuint value = GL_RGBA;
 };
+template<typename T> struct pixelt2gl<ghp::Single<0, ghp::RGBA<T> > > {
+  static const GLuint value = GL_RED;
+};
+template<typename T> struct pixelt2gl<ghp::Single<1, ghp::RGBA<T> > > {
+  static const GLuint value = GL_GREEN;
+};
+template<typename T> struct pixelt2gl<ghp::Single<2, ghp::RGBA<T> > > {
+  static const GLuint value = GL_BLUE;
+};
+template<typename T> struct pixelt2gl<ghp::Single<3, ghp::RGBA<T> > > {
+  static const GLuint value = GL_ALPHA;
+};
+template<typename T> struct pixelt2gl<ghp::Single<0, ghp::RGB<T> > > {
+  static const GLuint value = GL_RED;
+};
+template<typename T> struct pixelt2gl<ghp::Single<1, ghp::RGB<T> > > {
+  static const GLuint value = GL_GREEN;
+};
+template<typename T> struct pixelt2gl<ghp::Single<2, ghp::RGB<T> > > {
+  static const GLuint value = GL_BLUE;
+};
 
 template<int N, typename PIXELT>
 class texture { };
@@ -171,6 +187,24 @@ public:
         cpp2gl<typename PIXELT2::value_type>::value,
         &tex[0]));
   }
+  void resize(std::size_t width, std::size_t height,
+      GLuint min_filter = GL_LINEAR,
+      GLuint mag_filter = GL_LINEAR) {
+    CHECKED_GL_CALL(glBindTexture, (GL_TEXTURE_2D, id_));
+    CHECKED_GL_CALL(glTexParameteri, (GL_TEXTURE_2D,
+        GL_TEXTURE_MIN_FILTER, min_filter));
+    CHECKED_GL_CALL(glTexParameteri, (GL_TEXTURE_2D,
+        GL_TEXTURE_MAG_FILTER, mag_filter));
+    CHECKED_GL_CALL(glTexImage2D, (GL_TEXTURE_2D,
+        0,
+        pixelt2gl<PIXELT>::value,
+        width,
+        height,
+        0,
+        pixelt2gl<PIXELT>::value,
+        cpp2gl<typename PIXELT::value_type>::value,
+        NULL));
+  }
 
   inline GLuint id() const {
     return id_;
@@ -179,6 +213,65 @@ public:
 private:
   GLuint id_;
 };
+
+template<GLuint type> 
+class shader : boost::noncopyable {
+public:
+  inline shader(const std::string &source) 
+      : id_(NULL) {
+    id_ = glCreateShader(type);
+    CHECK_GL;
+    const char *src = source.c_str();
+    CHECKED_GL_CALL(glShaderSource, (id_,
+        1, &src, NULL));
+    CHECKED_GL_CALL(glCompileShader, (id_));
+  }
+  inline ~shader() {
+    if(id_ != NULL) {
+      CHECKED_GL_CALL(glDeleteShader, (id_));
+    }
+  }
+
+  inline GLuint id() const {
+    return id_;
+  }
+private:
+  GLuint id_;
+};
+
+template<int UNUSED=0>
+class program_ : boost::noncopyable {
+public:
+  inline program_() 
+      : id_(NULL) {
+    id_ = glCreateProgram();
+    CHECK_GL; 
+  }
+  inline ~program_() {
+    if(id_ != NULL) {
+      CHECKED_GL_CALL(glDeleteProgram, (id_));
+    }
+  }
+
+  template<GLuint T>
+  inline void attach(const shader<T> &sh) {
+    CHECKED_GL_CALL(glAttachShader, (id_, sh.id()));
+  }
+  template<GLuint T>
+  inline void detach(const shader<T> &sh) {
+    CHECKED_GL_CALL(glDetachShader, (id_, sh.id()));
+  }
+  inline void link() {
+    CHECKED_GL_CALL(glLinkProgram, (id_));
+  }
+
+  inline GLuint id() const {
+    return id_;
+  }
+private:
+  GLuint id_;
+};
+typedef program_<0> program;
 
 namespace {
   template<int N, typename T> struct translate_fctor { };
@@ -247,6 +340,13 @@ template<int N>
 static inline void unbind_texture() {
   CHECKED_GL_CALL(glBindTexture, 
       (gltexdim<N>::value, 0));
+}
+
+static inline void bind_program(const program &p) {
+  CHECKED_GL_CALL(glUseProgram, (p.id()));
+}
+static inline void unbind_program() {
+  CHECKED_GL_CALL(glUseProgram, (0));
 }
 
 template<typename T, typename PTR>
@@ -338,6 +438,12 @@ template<typename T>
 inline void rotate(const T &t) {
   rotate_fctor<T> fctor;
   fctor(t);
+}
+
+template<typename PIXELT>
+inline void clear_color(const ghp::color<PIXELT> &c) {
+  ghp::color<ghp::RGBA<float> > t = c;
+  glClearColor(t.red(), t.green(), t.blue(), t.alpha());
 }
 
 #undef CHECKED_GL_CALL

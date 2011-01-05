@@ -2,12 +2,12 @@
 #define _GHP_UTIL_CL_HPP_
 
 // OpenCL / OpenGL interop wrapper
-#ifdef _GHP_GFX_GL_HPP_
-#include "cl_gl.hpp"
-#endif
+#include "../gfx/gl.hpp"
 
 #include <cl.h>
+#include <cl_gl.h>
 
+// #include "../gfx.hpp"
 #include "../math.hpp"
 
 #include <boost/function.hpp>
@@ -148,6 +148,52 @@ const char* cl_err_string(cl_int err) {
   }
 }
 }
+
+template<typename T> struct cpp2cl { };
+template<> struct cpp2cl<int8_t> {
+  static const cl_channel_type value = CL_SIGNED_INT8;
+};
+template<> struct cpp2cl<uint8_t> {
+  static const cl_channel_type value = CL_UNSIGNED_INT8;
+};
+template<> struct cpp2cl<int16_t> {
+  static const cl_channel_type value = CL_SIGNED_INT16;
+};
+template<> struct cpp2cl<uint16_t> {
+  static const cl_channel_type value = CL_UNSIGNED_INT16;
+};
+template<> struct cpp2cl<int32_t> {
+  static const cl_channel_type value = CL_SIGNED_INT32;
+};
+template<> struct cpp2cl<uint32_t> {
+  static const cl_channel_type value = CL_UNSIGNED_INT32;
+};
+template<> struct cpp2cl<float> {
+  static const cl_channel_type value = CL_FLOAT;
+};
+
+template<typename PIXELT> struct pixelt2cl { };
+
+template<typename T> 
+struct pixelt2cl<ghp::Single<0, ghp::RGBA<T> > > {
+  static const cl_channel_order channel_order = CL_R;
+  static const cl_channel_type channel_type = cpp2cl<T>::value;
+};
+template<typename T>
+struct pixelt2cl<ghp::Single<3, ghp::RGBA<T> > > {
+  static const cl_channel_order channel_order = CL_A;
+  static const cl_channel_type channel_type = cpp2cl<T>::value;
+};
+template<typename T>
+struct pixelt2cl<ghp::Single<0, ghp::RGB<T> > > { 
+  static const cl_channel_order channel_order = CL_R;
+  static const cl_channel_type channel_type = cpp2cl<T>::value;
+};
+template<typename T>
+struct pixelt2cl<ghp::RGBA<T> > { 
+  static const cl_channel_order channel_order = CL_RGBA;
+  static const cl_channel_type channel_type = cpp2cl<T>::value;
+};
 
 template<int UNUSED>
 class cl_error_ : public std::runtime_error {
@@ -521,7 +567,7 @@ public:
     return id_;
   }
 
-private:
+protected:
   cl_mem id_;
 };
 
@@ -577,14 +623,19 @@ public:
 template<int UNUSED>
 class image2d_ref_ : public buffer_ref_base {
 public:
+  template<typename PIXELT>
   image2d_ref_(context_ref context,
-      const cl_image_format &format,
+      const PIXELT &pixelt,
       std::size_t width,
       std::size_t height,
       bool kernel_can_read = true,
       bool kernel_can_write = true,
       bool mappable = false) {
     int err;
+    cl_image_format format = {
+      pixelt2cl<PIXELT>::channel_order,
+      pixelt2cl<PIXELT>::channel_type
+    };
     id_ = clCreateImage2D(context.id(),
         ((kernel_can_read && kernel_can_write) ? CL_MEM_READ_WRITE : 0 ) |
         ((!kernel_can_read && kernel_can_write) ? CL_MEM_WRITE_ONLY : 0 ) |
@@ -600,16 +651,46 @@ public:
       throw cl_error(err, "error creating cl image2d");
     }
   }
-  template<typename T>
+  template<typename PIXELT>
   image2d_ref_(context_ref context,
-      const cl_image_format &format,
-      T *buffer,
+      const ghp::texture<PIXELT> &texture,
+      bool kernel_can_read = true,
+      bool kernel_can_write = true,
+      bool mappable = false) {
+    int err;
+    cl_image_format format = {
+        pixelt2cl<PIXELT>::channel_order,
+        pixelt2cl<PIXELT>::channel_type
+    };
+    id_ = clCreateImage2D(context.id(),
+        ((kernel_can_read && kernel_can_write) ? CL_MEM_READ_WRITE : 0 ) |
+        ((!kernel_can_read && kernel_can_write) ? CL_MEM_WRITE_ONLY : 0) |
+        ((kernel_can_read && !kernel_can_write) ? CL_MEM_READ_ONLY : 0) |
+        (mappable ? CL_MEM_ALLOC_HOST_PTR : 0),
+        &format,
+        texture.width(),
+        texture.height(),
+        0,
+        reinterpret_cast<void*>(texture[0]),
+        &err);
+    if(err != CL_SUCCESS) {
+      throw cl_error(err, "error creating cl image2d");
+    }
+  }
+  template<typename PIXELT>
+  image2d_ref_(context_ref context,
+      const PIXELT &pixelt,
+      void *v,
       std::size_t width,
       std::size_t height,
       bool kernel_can_read = true,
       bool kernel_can_write = true,
       bool mappable = false) {
     int err;
+    cl_image_format format = {
+        pixelt2cl<PIXELT>::channel_order,
+        pixelt2cl<PIXELT>::channel_type
+    };
     id_ = clCreateImage2D(context.id(),
         ((kernel_can_read && kernel_can_write) ? CL_MEM_READ_WRITE : 0 ) |
         ((!kernel_can_read && kernel_can_write) ? CL_MEM_WRITE_ONLY : 0) |
@@ -619,7 +700,27 @@ public:
         width,
         height,
         0,
-        reinterpret_cast<void*>(buffer),
+        reinterpret_cast<void*>(v),
+        &err);
+    if(err != CL_SUCCESS) {
+      throw cl_error(err, "error creating cl image2d");
+    }
+  }
+  template<typename PIXELT>
+  image2d_ref_(context_ref context,
+      const gl::texture<2, PIXELT> &gl_tex,
+      bool kernel_can_read = true,
+      bool kernel_can_write = true,
+      bool mappable = false) {
+    int err;
+    id_ = clCreateFromGLTexture2D(context.id(),
+        ((kernel_can_read && kernel_can_write) ? CL_MEM_READ_WRITE : 0 ) |
+        ((!kernel_can_read && kernel_can_write) ? CL_MEM_WRITE_ONLY : 0) |
+        ((kernel_can_read && !kernel_can_write) ? CL_MEM_READ_ONLY : 0) |
+        (mappable ? CL_MEM_ALLOC_HOST_PTR : 0),
+        GL_TEXTURE_2D,
+        0,
+        gl_tex.id(),
         &err);
     if(err != CL_SUCCESS) {
       throw cl_error(err, "error creating cl image2d");
@@ -1211,6 +1312,92 @@ public:
     }
     return event_ref(event);
   }
+
+  template<typename ITER1, typename ITER2> 
+  event_ref acquire_gl_objects(ITER1 objects_start, ITER2 objects_end) {
+    cl_event event;
+    int err;
+    std::vector<buffer_ref_base> objs;
+    objs.insert(objs.begin(), objects_start, objects_end);
+    err = clEnqueueAcquireGLObjects(
+        id_,
+        objs.size(),
+        reinterpret_cast<cl_mem*>(&objs[0]),
+        0, NULL,
+        &event);
+    if(err != CL_SUCCESS) {
+      throw cl_error(err, "error enqueueing GL object acquire");
+    }
+    return event_ref(event);
+  }
+
+  template<typename ITER1, typename ITER2,
+      typename ITER3, typename ITER4>
+  event_ref acquire_gl_objects(
+      ITER1 objects_start, ITER2 objects_end,
+      ITER3 events_start, ITER4 events_end) {
+    cl_event event;
+    int err;
+    std::vector<buffer_ref_base> objs;
+    std::vector<event_ref> events;
+    objs.insert(objs.begin(), objects_start, objects_end);
+    events.insert(events.begin(), events_start, events_end);
+    err = clEnqueueAcquireGLObjects(
+        id_,
+        objs.size(),
+        reinterpret_cast<cl_mem*>(&objs[0]),
+        events.size(),
+        reinterpret_cast<cl_event*>(&events[0]),
+        &event);
+    if(err != CL_SUCCESS) {
+      throw cl_error(err, "error enqueueing GL object acquire");
+    }
+    return event_ref(event);
+  }
+
+  template<typename ITER1, typename ITER2>
+  event_ref release_gl_objects(
+      ITER1 objects_start, ITER2 objects_end) {
+    cl_event event;
+    int err;
+    std::vector<buffer_ref_base> objs;
+    objs.insert(objs.begin(), objects_start, objects_end);
+    err = clEnqueueReleaseGLObjects(
+        id_,
+        objs.size(),
+        reinterpret_cast<cl_mem*>(&objs[0]),
+        0, NULL,
+        &event);
+    if(err != CL_SUCCESS) {
+      throw cl_error(err, "error enqueueing GL object release");
+    }
+    return event_ref(event);
+  }
+
+  template<typename ITER1, typename ITER2,
+      typename ITER3, typename ITER4>
+  event_ref release_gl_objects(
+      ITER1 objects_start, ITER2 objects_end,
+      ITER3 events_start, ITER4 events_end) {
+    cl_event event;
+    int err;
+    std::vector<buffer_ref_base> objs;
+    std::vector<event_ref> events;
+    objs.insert(objs.begin(), objects_start, objects_end);
+    events.insert(events.begin(), events_start, events_end);
+    err = clEnqueueReleaseGLObjects(
+        id_,
+        objs.size(),
+        reinterpret_cast<cl_mem*>(&objs[0]),
+        events.size(),
+        reinterpret_cast<cl_event*>(&events[0]),
+        &event);
+    if(err != CL_SUCCESS) {
+      throw cl_error(err, "error enqueueing GL object release");
+    }
+    return event_ref(event);
+  }
+
 private:
   cl_command_queue id_;
 };

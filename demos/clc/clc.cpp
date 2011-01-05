@@ -125,7 +125,7 @@ int main(int argc, char *argv[]) {
     program.build(options);
     std::cout << "build successful!\n";
 
-    if(vm.count("header")) {
+    if(vm.count("cpp")) {
       fs::path input_path_obj(input_path);
       std::string file_base = input_path_obj.stem();
       std::string file_base_upper = file_base;

@@ -9,15 +9,21 @@ CLINCLUDE=-I/usr/include/nvidia-current \
 	-I/usr/include/SDL
 endif
 
+.SUFFIXES: .opencl
+
 CXX=g++
 CXXFLAGS=-g3 -Wall -Wextra \
 	${CLINCLUDE}
-OBJS=cl_demo.o
+OBJS=cl_demo.o kernel.opencl.o
 OUT=cl_demo
 
-${OUT}: ${OBJS}
-	${CXX} ${CXXFLAGS} -lOpenCL -lGL -lSDL -lGLU -lGLEW $^ -o $@
+${OUT}: kernels ${OBJS}
+	${CXX} ${CXXFLAGS} -lOpenCL -lGL -lSDL -lSDL_image \
+		-lGLU -lGLEW ${OBJS} -o $@
+
+kernels:
+	clc -x kernel.opencl
 
 clean:
-	${RM} ${OUT} ${OBJS}
+	${RM} ${OUT} ${OBJS} kernel.opencl.*
 

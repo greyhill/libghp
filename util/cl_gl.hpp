@@ -7,6 +7,67 @@
 
 namespace cl {
 
+/*
+template<>
+class image2d_ref_<0> : public buffer_ref_base {
+public:
+  image2d_ref_(context_ref context,
+      const cl_image_format &format,
+      std::size_t width,
+      std::size_t height,
+      bool kernel_can_read = true,
+      bool kernel_can_write = true,
+      bool mappable = false) {
+    int err;
+    id_ = clCreateImage2D(context.id(),
+        ((kernel_can_read && kernel_can_write) ? CL_MEM_READ_WRITE : 0 ) |
+        ((!kernel_can_read && kernel_can_write) ? CL_MEM_WRITE_ONLY : 0 ) |
+        ((kernel_can_read && !kernel_can_write) ? CL_MEM_READ_ONLY : 0 ) | 
+        (mappable ? CL_MEM_ALLOC_HOST_PTR : 0),
+        &format,
+        width,
+        height,
+        0,
+        NULL,
+        &err);
+    if(err != CL_SUCCESS) {
+      throw cl_error(err, "error creating cl image2d");
+    }
+  }
+
+  template<typename T>
+  image2d_ref_(context_ref context,
+      const cl_image_format &format,
+      T *buffer,
+      std::size_t width,
+      std::size_t height,
+      bool kernel_can_read = true,
+      bool kernel_can_write = true,
+      bool mappable = false) {
+    int err;
+    id_ = clCreateImage2D(context.id(),
+        ((kernel_can_read && kernel_can_write) ? CL_MEM_READ_WRITE : 0 ) |
+        ((!kernel_can_read && kernel_can_write) ? CL_MEM_WRITE_ONLY : 0) |
+        ((kernel_can_read && !kernel_can_write) ? CL_MEM_READ_ONLY : 0) |
+        (mappable ? CL_MEM_ALLOC_HOST_PTR : 0),
+        &format,
+        width,
+        height,
+        0,
+        reinterpret_cast<void*>(buffer),
+        &err);
+    if(err != CL_SUCCESS) {
+      throw cl_error(err, "error creating cl image2d");
+    }
+  }
+
+  inline image2d_ref_(const image2d_ref_ &r) {
+    id_ = r.id_;
+    clRetainMemObject(id_);
+  }
+};
+
+
 // use specialization trick to replace regular object with
 // one including GL/CL interop code
 template<> 
@@ -424,7 +485,7 @@ private:
   cl_command_queue id_;
 };
 
-
+*/
 }
 
 #endif
