@@ -1154,7 +1154,7 @@ public:
       bool blocking=false, std::size_t offset=0) {
     cl_event event;
     std::vector<event_ref> events;
-    events.insert(wait_begin, wait_end);
+    events.insert(events.begin(), wait_begin, wait_end);
     int err;
     err = clEnqueueWriteBuffer(id_,
         buffer.id(),
@@ -1171,7 +1171,7 @@ public:
     return event_ref(event);
   }
 
-  event_ref write_image2d(buffer_ref buffer,
+  event_ref write_image2d(image2d_ref buffer,
       const ghp::vector<2, std::size_t> &size, 
       void *src,
       bool blocking=false,
@@ -1179,11 +1179,15 @@ public:
           ghp::vector2<std::size_t>(0,0)) {
     cl_event event;
     int err;
+    ghp::vector<3, std::size_t> size2 = ghp::vector3<std::size_t>(
+        size[0], size[1], 1);
+    ghp::vector<3, std::size_t> offset2 = ghp::vector3<std::size_t>(
+        offset[0], offset[1], 0);
     err = clEnqueueWriteImage(id_,
         buffer.id(),
         blocking,
-        &offset[0],
-        &size[0],
+        &offset2[0],
+        &size2[0],
         0,
         0,
         src,
@@ -1196,7 +1200,7 @@ public:
   }
 
   template<typename ITER1, typename ITER2>
-  event_ref write_image2d(buffer_ref buffer,
+  event_ref write_image2d(image2d_ref buffer,
       const ghp::vector<2, std::size_t> &size,
       void *src,
       ITER1 event_begin, ITER2 event_end,
@@ -1205,13 +1209,17 @@ public:
           ghp::vector2<std::size_t>(0,0)) {
     cl_event event;
     int err;
+    ghp::vector<3, std::size_t> size2 = ghp::vector3<std::size_t>(
+        size[0], size[1], 1);
+    ghp::vector<3, std::size_t> offset2 = ghp::vector3<std::size_t>(
+        offset[0], offset[1], 0);
     std::vector<cl::event_ref> events;
     events.insert(events.begin(), event_begin, event_end);
     err = clEnqueueWriteImage(id_,
         buffer.id(),
         blocking,
-        &offset[0],
-        &size[0],
+        &offset2[0],
+        &size2[0],
         0,0,
         src,
         events.size(), 
