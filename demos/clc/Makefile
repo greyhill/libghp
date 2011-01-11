@@ -4,7 +4,8 @@ CLINCLUDE=-I${ATISTREAMSDKROOT}/include/CL \
 	-L${ATISTREAMSDKROOT}/lib/x86
 else
 CLINCLUDE=-I/usr/include/nvidia-current \
-	-I/usr/include/nvidia-current/CL
+	-I/usr/include/nvidia-current/CL \
+	-I/usr/include/GL
 endif
 
 CXX=g++
