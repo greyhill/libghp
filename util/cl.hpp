@@ -1062,7 +1062,7 @@ public:
       bool blocking=false, std::size_t offset=0) {
     cl_event event;
     std::vector<event_ref> events;
-    events.insert(wait_begin, wait_end);
+    events.insert(events.begin(), wait_begin, wait_end);
     int err;
     err = clEnqueueReadBuffer(id_,
         buffer.id(),
@@ -1087,11 +1087,15 @@ public:
           ghp::vector2<std::size_t>(0,0)) {
     cl_event event;
     int err;
+    ghp::vector<3, std::size_t> size2 = ghp::vector3<std::size_t>(
+        size[0], size[1], 1);
+    ghp::vector<3, std::size_t> offset2 = ghp::vector3<std::size_t>(
+        offset[0], offset[1], 0);
     err = clEnqueueReadImage(id_,
         buffer.id(),
         blocking,
-        &offset[0],
-        &size[0],
+        &offset2[0],
+        &size2[0],
         0,
         0,
         dest,
@@ -1114,12 +1118,16 @@ public:
     cl_event event;
     std::vector<event_ref> events;
     events.insert(events.begin(), wait_begin, wait_end);
+    ghp::vector<3, std::size_t> size2 = ghp::vector3<std::size_t>(
+        size[0], size[1], 1);
+    ghp::vector<3, std::size_t> offset2 = ghp::vector3<std::size_t>(
+        offset[0], offset[1], 0);
     int err;
     err = clEnqueueReadImage(id_,
         buffer.id(),
         blocking,
-        &offset[0],
-        &size[0],
+        &offset2[0],
+        &size2[0],
         0,0,
         dest,
         events.size(), reinterpret_cast<cl_event*>(&events[0]),

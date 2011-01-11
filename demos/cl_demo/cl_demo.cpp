@@ -33,28 +33,31 @@ int main(int argc, char *argv[]) {
   program.build();
   cl::kernel_ref kernel = program.get_kernel("kernel_main");
 
-  sdl::gl_display display(800, 600, false);
-  sdl::input input;
-  input.quit_slot().connect(handle_quit);
+  typedef ghp::Single<0, ghp::RGB<float> > PIXELT;
 
-  gl::texture<2, ghp::RGBA<float> > gl_texture;
-  gl_texture.resize(512, 512);
+  ghp::texture<PIXELT> tex;
+  sdl::load_image("img.jpg", tex);
+  cl::image2d_ref cl_img(context, PIXELT(), 512, 512);
+  cl::image2d_ref cl_out(context, PIXELT(), 512, 512);
+  command.write_image2d(cl_img,
+      ghp::vector2<std::size_t>(512, 512),
+      &tex[0]).wait();
 
-  cl::image2d_ref cl_texture(context, gl_texture);
-
-  command.acquire_gl_objects(&cl_texture, &cl_texture+1).wait();
+  kernel.set_arg(0, 512);
+  kernel.set_arg(1, 512);
+  kernel.set_arg(2, cl_img);
+  kernel.set_arg(3, cl_out);
   std::size_t global_sizes[] = { 512, 512 };
   std::size_t local_sizes[] = { 16, 16 };
   command.run_kernel(kernel, 2, global_sizes, local_sizes).wait();
-  command.release_gl_objects(&cl_texture, &cl_texture+1).wait();
-
-  gl::clear_color(ghp::standard_colors<ghp::RGBA<float> >::BLACK);
-
-  while(running) {
-    input.handle_events();
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    display.update();
+  
+  command.read_image2d(cl_out, &tex[0], ghp::vector2<std::size_t>(512, 512));
+  
+  float max = 0;
+  for(int i=0; i<512*512; ++i) {
+    max = std::max(max, tex[i][0]);
   }
+  std::cout << "max value: " << max << std::endl;
+  sdl::save_bmp("out.bmp", tex);
 }
 
