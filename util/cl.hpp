@@ -33,6 +33,7 @@ template<int UNUSED> class command_queue_ref_;
 template<int UNUSED> class buffer_ref_base_;
 template<int UNUSED> class buffer_ref_;
 template<int UNUSED> class image2d_ref_;
+template<int UNUSED> class image3d_ref_;
 template<int UNUSED> class program_ref_;
 template<int UNUSED> class kernel_ref_;
 
@@ -45,6 +46,7 @@ typedef command_queue_ref_<0> command_queue_ref;
 typedef buffer_ref_base_<0> buffer_ref_base;
 typedef buffer_ref_<0> buffer_ref;
 typedef image2d_ref_<0> image2d_ref;
+typedef image3d_ref_<0> image3d_ref;
 typedef program_ref_<0> program_ref;
 typedef kernel_ref_<0> kernel_ref;
 
@@ -734,6 +736,79 @@ public:
 };
 
 template<int UNUSED>
+class image3d_ref_ : public buffer_ref_base {
+public:
+  template<typename PIXELT>
+  image3d_ref_(context_ref context,
+      const PIXELT &pixelt,
+      std::size_t width,
+      std::size_t height,
+      std::size_t depth,
+      bool kernel_can_read = true,
+      bool kerenl_can_write = true,
+      bool mappable = false) {
+    int err;
+    cl_image_format format = {
+      pixelt2cl<PIXELT>::channel_order,
+      pixelt2cl<PIXELT>::channel_type
+    };
+    id_ = clCreateImage3D(context.id(),
+        ((kernel_can_read && kernel_can_write) ? CL_MEM_READ_WRITE : 0) |
+        ((!kernel_can_read && kernel_can_Write) ? CL_MEM_WRITE_ONLY : 0) |
+        ((kernel_can_read && !kernel_can_write) ? CL_MEM_READ_ONLY : 0) |
+        (mappable ? CL_MEM_ALLOC_HOST_PTR : 0),
+        &format,
+        width,
+        height,
+        depth,
+        0,
+        0,
+        NULL,
+        &err);
+    if(err != CL_SUCCESS) {
+      throw cl_error(err, "error creating cl image3d");
+    }
+  }
+  template<typename PIXELT>
+  image3d_ref_(context_ref context,
+      const PIXELT &pixelt,
+      void *v,
+      std::size_t width,
+      std::size_t height,
+      std::size_t depth,
+      bool kernel_can_read = true,
+      bool kernel_can_write = true,
+      bool mappable = false) {
+    int err;
+    cl_image_format format = {
+        pixelt2cl<PIXELT>::channel_order,
+        pixelt2cl<PIXELT>::channel_type
+    };
+    id_ = clCreateImage2D(context.id(),
+        ((kernel_can_read && kernel_can_write) ? CL_MEM_READ_WRITE : 0 ) |
+        ((!kernel_can_read && kernel_can_write) ? CL_MEM_WRITE_ONLY : 0 ) |
+        ((kernel_can_read && !kernel_can_write) ? CL_MEM_READ_ONLY : 0) |
+        (mappable ? CL_MEM_ALLOC_HOST_PTR : 0),
+        &format,
+        width,
+        height,
+        depth,
+        0,
+        0,
+        reinterpret_cast<void*>(v),
+        &err);
+    if(err != CL_SUCCESS) {
+      throw cl_error(err, "error creating cl image3d");
+    }
+  }
+
+  inline image3d_ref_(const image3d_ref_ &r) {
+    id_ = r.id_;
+    clRetainMemObject(id_);
+  }
+};
+
+template<int UNUSED>
 class program_ref_ {
 public:
   inline program_ref_(cl_program p)
@@ -1079,6 +1154,33 @@ public:
     return event_ref(event);
   }
 
+  event_ref read_image2d(image2d_ref buffer,
+      void *dest,
+      std::size_t width, std::size_t height,
+      bool blocking = false,
+      std::size_t offset_w = 0, std::size_t offset_h = 0) {
+    cl_event event;
+    int err;
+    ghp::vector<3, std::size_t> size2 = ghp::vector3<std::size_t>(
+        width, height, 1);
+    ghp::vector<3, std::size_t> offset2 = ghp::vector3<std::size_t>(
+        offset_w, offset_h, 0);
+    err = clEnqueueReadImage(id_,
+        buffer.id(),
+        blocking,
+        &offset2[0],
+        &size2[0],
+        0,
+        0m
+        dest,
+        0, NULL,
+        &event);
+    if(err != CL_SUCCESS) {
+      throw cl_error(err, "error enqueueing cl image2d read");
+    }
+    return event_ref(event);
+  }
+
   event_ref read_image2d(image2d_ref buffer, 
       void *dest,
       const ghp::vector<2, std::size_t> &size,
@@ -1100,6 +1202,36 @@ public:
         0,
         dest,
         0, NULL,
+        &event);
+    if(err != CL_SUCCESS) {
+      throw cl_error(err, "error enqueueing cl image2d read");
+    }
+    return event_ref(event);
+  }
+
+  template<typename ITER1, typename ITER2>
+  event_ref read_image2d(image2d_ref buffer,
+      void *dest,
+      std::size_t width, std::size_t height,
+      ITER1 wait_begin, ITER2 wait_end,
+      bool blocking = false,
+      std::size_t offset_w = 0, std::size_t offset_h = 0) {
+    cl_event event;
+    std::vector<event_ref> events;
+    events.insert(events.begin(), wait_begin, wait_end);
+    ghp::vector<3, std::size_t> size2 = ghp::vector3<std::size_t>(
+        width, height, 1);
+    ghp::vector<3, std::size_t> offset2 = ghp::vector3<std::size_t>(
+        offset_w, offset_h, 0);
+    int err;
+    err = clEnqueueReadImage(id_,
+        buffer.id(),
+        blocking,
+        &offset2[0],
+        &size2[0],
+        0, 0,
+        dest,
+        events.size(), reinterpret_cast<cl_event*>(&events[0]),
         &event);
     if(err != CL_SUCCESS) {
       throw cl_error(err, "error enqueueing cl image2d read");
@@ -1133,8 +1265,9 @@ public:
         events.size(), reinterpret_cast<cl_event*>(&events[0]),
         &event);
     if(err != CL_SUCCESS) {
-      throw cl_error(err, "error enqueueing cl buffer read");
+      throw cl_error(err, "error enqueueing cl image2d read");
     }
+    return event_ref(event);
   }
 
   event_ref write_buffer(buffer_ref buffer, std::size_t size,
@@ -1180,6 +1313,33 @@ public:
   }
 
   event_ref write_image2d(image2d_ref buffer,
+      std::size_t width, std::size_t height,
+      void *src,
+      bool blocking = false,
+      std::size_t offset_w = 0, std::size_t offset_h = 0) {
+    cl_event event;
+    int err;
+    ghp::vector<3, std::size_t> size2 = ghp::vector3<std::size_t>(
+        width, height, 1);
+    ghp::vector<3, std::size_t> offset2 = ghp::vector3<std::size_t>(
+        offset_w, offset_h, 0);
+    err = clEnqueueWriteImage(id_,
+        buffer.id(),
+        blocking,
+        &offset2[0],
+        &size2[0],
+        0,
+        0,
+        src,
+        0, NULL,
+        &event);
+    if(err != CL_SUCCESS) {
+      throw cl_error(err, "error enqueueing image2d write");
+    }
+    return event_ref(event);
+  }
+
+  event_ref write_image2d(image2d_ref buffer,
       const ghp::vector<2, std::size_t> &size, 
       void *src,
       bool blocking=false,
@@ -1203,6 +1363,35 @@ public:
         &event);
     if(err != CL_SUCCESS) {
       throw cl_error(err, "error enqueueing image2d write");
+    }
+    return event_ref(event);
+  }
+
+  template<typename ITER1, typename ITER2>
+  event_ref write_image2d(image2d_ref buffer,
+      std::size_t width, std::size_t height,
+      void *src,
+      ITER1 event_begin, ITER2 event_end,
+      bool blocking = false,
+      std::size_t offset_w = 0, std::size_t offset_h = 0) {
+    cl_event event;
+    int err;
+    std::size_t size2[] = { width, height, 1 };
+    std::size_t offset2 = { offset_w, offset_h, 0 };
+    std::vector<cl::event_ref> events;
+    events.insert(events.begin(), event_begin, event_end);
+    err = clEnqueueWriteImage(id_,
+        buffer.id(),
+        blocking,
+        offset2,
+        size2,
+        0, 0,
+        src,
+        events.size(),
+        reinterpret_cast<cl_event*>(&events[0]),
+        &event);
+    if(err != CL_SUCCESS) {
+      throw cl_error(err, "error enqueueing cl image write");
     }
     return event_ref(event);
   }
