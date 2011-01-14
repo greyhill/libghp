@@ -84,6 +84,10 @@ public:
     return accum;
   }
 
+  inline std::size_t length() const {
+    return get_length();
+  }
+
   std::string str() const {
     std::size_t length = get_length() + 1;
     std::vector<char> buf(length);

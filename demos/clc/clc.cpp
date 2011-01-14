@@ -1,7 +1,7 @@
 #include <ghp/util/cl.hpp>
 
 #include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
+#include <boost/filesystem/path.hpp>
 #include <boost/program_options.hpp>
 #include <boost/regex.hpp>
 
@@ -127,7 +127,16 @@ int main(int argc, char *argv[]) {
 
     if(vm.count("cpp")) {
       fs::path input_path_obj(input_path);
-      std::string file_base = input_path_obj.stem();
+      // older versions of boost don't have this method
+      //std::string file_base = input_path_obj.stem();
+      std::size_t start = input_path.find_last_of('/');
+      if(start == std::string::npos) {
+        start = 0;
+      } else {
+        ++start;
+      }
+      std::string file_base = input_path.substr(start, 
+          input_path.find_last_of('.')-start);
       std::string file_base_upper = file_base;
       boost::to_upper(file_base_upper);
   

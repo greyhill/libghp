@@ -1,8 +1,11 @@
 #ifndef _GHP_UTIL_CL_HPP_
 #define _GHP_UTIL_CL_HPP_
 
+#ifndef GHP_CL_NOGL
 // OpenCL / OpenGL interop wrapper
 #include "../gfx/gl.hpp"
+#endif
+#include "../gfx.hpp"
 
 #include <cl.h>
 #include <cl_gl.h>
@@ -708,6 +711,7 @@ public:
       throw cl_error(err, "error creating cl image2d");
     }
   }
+#ifndef GHP_CL_NOGL
   template<typename PIXELT>
   image2d_ref_(context_ref context,
       const gl::texture<2, PIXELT> &gl_tex,
@@ -728,6 +732,7 @@ public:
       throw cl_error(err, "error creating cl image2d");
     }
   }
+#endif
 
   inline image2d_ref_(const image2d_ref_ &r) {
     id_ = r.id_;
