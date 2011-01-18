@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
   cl::image2d_ref cl_img(context, PIXELT(), 512, 512);
   cl::image2d_ref cl_out(context, PIXELT(), 512, 512);
   command.write_image2d(cl_img,
-      ghp::vector2<std::size_t>(512, 512),
+      512, 512,
       &tex[0]).wait();
 
   kernel.set_arg(0, 512);
@@ -51,13 +51,8 @@ int main(int argc, char *argv[]) {
   std::size_t local_sizes[] = { 16, 16 };
   command.run_kernel(kernel, 2, global_sizes, local_sizes).wait();
   
-  command.read_image2d(cl_out, &tex[0], ghp::vector2<std::size_t>(512, 512));
-  
-  float max = 0;
-  for(int i=0; i<512*512; ++i) {
-    max = std::max(max, tex[i][0]);
-  }
-  std::cout << "max value: " << max << std::endl;
+  command.read_image2d(cl_out, &tex[0], 512, 512);
+
   sdl::save_bmp("out.bmp", tex);
 }
 

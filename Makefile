@@ -1,4 +1,5 @@
 install: 
+	(cd util && perl mk_cl_device_extensions_methods.pl)
 	(mkdir /usr/include/ghp)
 	(mkdir /usr/include/ghp/gfx && cp gfx/* /usr/include/ghp/gfx)
 	(cp gfx.hpp /usr/include/ghp)

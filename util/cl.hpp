@@ -4,6 +4,16 @@
 #ifndef GHP_CL_NOGL
 // OpenCL / OpenGL interop wrapper
 #include "../gfx/gl.hpp"
+
+#ifdef WIN32
+#else
+  #ifdef MACOSX || defined(__APPLE__)
+  #else
+    #include "glx.h"
+  #endif
+#endif
+
+
 #endif
 #include "../gfx.hpp"
 
@@ -480,6 +490,64 @@ public:
     return id_;
   }
 
+#ifndef GHP_CL_NOGL
+  static context_ref_ from_gl_context(platform_ref platform,
+      device_ref device) {
+    return from_gl_context(platform, &device, &device+1);
+  }
+  
+  template<typename ITER1, typename ITER2>
+  static context_ref_ from_gl_context(platform_ref platform,
+      ITER1 devices_begin, ITER2 devices_end) {
+    cl_context id;
+    std::vector<device_ref> devices;
+    devices.insert(devices.begin(), devices_begin, devices_end);
+    cl_context_properties props[] = {
+#ifdef WIN32
+    // windows context setup
+      CL_CONTEXT_PLATFORM, 
+          reinterpret_cast<cl_context_properties>(platform.id()),
+      CL_WGL_HDC_KHR,
+          reinterpret_cast<cl_context_properties>(wglGetCurrentDC()),
+      CL_GL_CONTEXT_KHR,
+          reinterpret_cast<cl_context_properties>(wglGetCurrentContext()),
+      0
+#else
+  #ifdef __APPLE__ || defined(MACOSX)
+    // apple context setup
+    // TODO this looks mad sketchy, but I don't have a mac to test
+    // it on.
+      CL_CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE,
+          reinterpret_cast<cl_context_properties>(
+          CGLGetShareGroup(CGLGetCurrentContext())), 
+      0
+  #else
+    // linux context setup
+      CL_GL_CONTEXT_KHR, 
+          reinterpret_cast<cl_context_properties>(glXGetCurrentContext()),
+      CL_GLX_DISPLAY_KHR,
+          reinterpret_cast<cl_context_properties>(glXGetCurrentDisplay()),
+      CL_CONTEXT_PLATFORM,
+          reinterpret_cast<cl_context_properties>(platform.id()),
+      0
+  #endif
+#endif
+    };
+    int err;
+    id = clCreateContext(props,
+        devices.size(),
+        reinterpret_cast<cl_device_id*>(&devices[0]),
+        NULL,
+        NULL,
+        &err);
+    if(err != CL_SUCCESS) {
+      throw cl_error(err, "error creating CL context from GL context");
+    }
+    context_ref_ context(id);
+    return context;
+  }
+#endif
+
 private:
   cl_context id_;
 };
@@ -618,6 +686,27 @@ public:
       throw cl_error(err, "error creating cl buffer");
     }
   }
+#ifndef GHP_CL_NOGL
+  template<GLenum TYPE>
+  buffer_ref_(context_ref context,
+      const gl::vbo<TYPE> &vbo,
+      bool kernel_can_read = true,
+      bool kernel_can_write = true,
+      bool mappable = false) {
+    int err;
+    id_ = clCreateFromGLBuffer(context.id(),
+          ((kernel_can_read && kernel_can_write) ? CL_MEM_READ_WRITE : 0) |
+          ((!kernel_can_read && kernel_can_write) ? CL_MEM_WRITE_ONLY : 0) |
+          ((kernel_can_read && !kernel_can_write) ? CL_MEM_READ_ONLY : 0) |
+          CL_MEM_COPY_HOST_PTR |
+          (mappable ? CL_MEM_ALLOC_HOST_PTR : 0),
+        vbo.id(),
+        &err);
+    if(err != CL_SUCCESS) {
+      throw cl_error(err, "error creating cl buffer");
+    }
+  }
+#endif
 
   inline buffer_ref_(const buffer_ref_ &r) {
     id_ = r.id_;
@@ -1516,6 +1605,7 @@ public:
     return event_ref(event);
   }
 
+#ifndef GHP_CL_NOGL
   template<typename ITER1, typename ITER2> 
   event_ref acquire_gl_objects(ITER1 objects_start, ITER2 objects_end) {
     cl_event event;
@@ -1600,6 +1690,7 @@ public:
     }
     return event_ref(event);
   }
+#endif
 
 private:
   cl_command_queue id_;
