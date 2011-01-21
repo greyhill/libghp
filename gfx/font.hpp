@@ -12,7 +12,7 @@
 namespace ghp {
 
 /**
-  \brief an individual textured glyph in a font. supports the
+  \brief an individual textured glyph in a bitmap_font. supports the
   texture concept.
   \tparam PIXELT - some pixel type
  */
@@ -103,28 +103,28 @@ private:
 };
 
 /**
-  \brief a bitmapped font
+  \brief a bitmapped bitmap_font
   \tparam PIXELT - pixel type
   \tparam K - character type, defaults to char
  */
 template<typename PIXELT, typename K=char>
-class font {
+class bitmap_font {
 public:
   typedef PIXELT pixel_type;
   typedef glyph<pixel_type> glyph_type;
 
-  /** \brief create a new font */
-  font() {
+  /** \brief create a new bitmap_font */
+  bitmap_font() {
   }
   /** \brief copy constructor */
-  font(const font &f)
+  bitmap_font(const bitmap_font &f)
       : glyphs_(f.glyphs_) {
   }
-  ~font() {
+  ~bitmap_font() {
   }
 
   /** \brief mutable glyph access.  If a glyph is requested does
-    not exist, it is created, added to the font, and returned.  */
+    not exist, it is created, added to the bitmap_font, and returned.  */
   inline glyph_type& operator()(const K &k) {
     typename std::map<K, boost::shared_ptr<glyph_type> >::iterator 
         it = glyphs_.find(k);
@@ -142,13 +142,13 @@ public:
     typename std::map<K, boost::shared_ptr<glyph_type> >::const_iterator 
         it = glyphs_.find(k);
     if(it == glyphs_.end()) {
-      throw std::runtime_error("font doesn't contain that glyph!");
+      throw std::runtime_error("bitmap_font doesn't contain that glyph!");
     } else {
       return *(it->second);
     }
   }
   /** \brief mutable glyph access.  If a glyph is requested does
-    not exist, it is created, added to the font, and returned.  */
+    not exist, it is created, added to the bitmap_font, and returned.  */
   inline glyph_type& operator[](const K &k) {
     return (*this)(k);
   }
@@ -156,6 +156,16 @@ public:
     exist yet, an exception is thrown. */
   inline const glyph_type& operator[](const K &k) const {
     return (*this)(k);
+  }
+
+  /** \brief places a list of keys into the passed container */
+  template<typename C>
+  inline void get_keys(C &container) const {
+    typename std::map<K, boost::shared_ptr<glyph_type> >::const_iterator
+        it = glyphs_.begin();
+    for(; it != glyphs_.end(); ++it) {
+      container.push_back(it->first);
+    }
   }
 
   /** \brief element access */

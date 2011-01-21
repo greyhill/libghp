@@ -1,6 +1,8 @@
 #ifndef _GHP_GFX_GL_HPP_
 #define _GHP_GFX_GL_HPP_
 
+#include "gl_bitmap_font.hpp"
+
 #include "color.hpp"
 #include "texture.hpp"
 

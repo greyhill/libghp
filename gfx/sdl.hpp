@@ -136,7 +136,7 @@ void save_bmp(const std::string &path, const TEX &src) {
 template<typename PIXELT>
 void load_ttf_font_ascii(const std::string &path, int pt_size, 
     const ghp::color<PIXELT> &color,
-    ghp::font<PIXELT, char> &font) {
+    ghp::bitmap_font<PIXELT, char> &font) {
   if(!TTF_WasInit()) {
     if(TTF_Init() == -1) {
       throw std::runtime_error(TTF_GetError());

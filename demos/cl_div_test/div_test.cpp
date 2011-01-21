@@ -1,6 +1,8 @@
-#include <ghp/util/cl.hpp>
-
 #include "div_kernel.opencl.hpp"
+
+#include <boost/progress.hpp>
+
+#include <ghp/util/cl.hpp>
 
 #include <list>
 #include <vector>
@@ -16,7 +18,7 @@ int main(int argc, char *argv[]) {
   cl::device_ref device = devices.front();
 
   cl::context_ref context(platform, device);
-  cl::command_queue_ref queue(context, device);
+  cl::command_queue_ref queue(context, device, true, true);
 
   cl::program_ref program(context, div_kernel_opencl_source);
   program.build();
@@ -24,8 +26,6 @@ int main(int argc, char *argv[]) {
   cl::kernel_ref with_div = program.get_kernel("with_div");
   cl::kernel_ref with_sync = program.get_kernel("with_sync");
   cl::kernel_ref no_div = program.get_kernel("no_div");
-
-  cl::kernel_ref use_program = no_div;
 
   std::vector<float> buffer(1024*768);
   for(int i=0; i<buffer.size(); ++i) {
@@ -40,12 +40,23 @@ int main(int argc, char *argv[]) {
   std::size_t global_size[] = { 1024, 768 };
   std::size_t local_size[] = { 16, 16 };
 
-  use_program.set_arg(0, in_buffer);
-  use_program.set_arg(1, out_buffer);
-  queue.run_kernel(use_program,
-      2,
-      global_size,
-      local_size).wait();
+  cl::kernel_ref use_program = with_div;
+  for(int i=0; i<3; ++i) {
+    switch(i) {
+      case 0: use_program = with_div; break;
+      case 1: use_program = with_sync; break;
+      case 2: use_program = no_div; break;
+    }
+    use_program.set_arg(0, in_buffer);
+    use_program.set_arg(1, out_buffer);
+    for(int i=0; i<32; ++i) {
+      boost::progress_timer timer;
+      queue.run_kernel(use_program,
+          2,
+          global_size,
+          local_size).wait();
+    }
+  }
 
   return EXIT_SUCCESS;
 }
