@@ -1542,7 +1542,7 @@ public:
     cl_event event;
     int err;
     std::vector<event_ref> events;
-    events.insert(wait_begin, wait_end);
+    events.insert(events.begin(), wait_begin, wait_end);
     err = clEnqueueCopyBuffer(id_, 
         src.id(),
         dst.id(),
