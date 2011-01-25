@@ -1,8 +1,6 @@
 #ifndef _GHP_GFX_GL_HPP_
 #define _GHP_GFX_GL_HPP_
 
-#include "gl_bitmap_font.hpp"
-
 #include "color.hpp"
 #include "texture.hpp"
 
@@ -451,6 +449,8 @@ inline void clear_color(const ghp::color<PIXELT> &c) {
 #undef CHECKED_GL_CALL
 
 }
+
+#include "gl_bitmap_font.hpp"
 
 #endif
 
