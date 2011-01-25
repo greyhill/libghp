@@ -1206,6 +1206,14 @@ public:
     return id_ == q.id_;
   }
 
+  void flush() {
+    int err;
+    err = clFlush(id_);
+    if(err != CL_SUCCESS) {
+      throw cl_error(err, "error flushing CL command queue");
+    }
+  }
+
   event_ref read_buffer(buffer_ref buffer, std::size_t size,
       void *dest, 
       bool blocking=false, 
