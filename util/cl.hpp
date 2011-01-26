@@ -277,7 +277,7 @@ public:
     err = clGetPlatformIDs(num_platforms, &platform_ids[0], NULL);
     if(err != CL_SUCCESS) throw cl_error(err, "cl error");
 
-    for(int i=0; i<num_platforms; ++i) {
+    for(unsigned i=0; i<num_platforms; ++i) {
       c.insert(c.end(), platform_ref_(platform_ids[i]));
     }
   }
@@ -1135,6 +1135,7 @@ public:
     if(err != CL_SUCCESS) {
       throw cl_error(err, "error binding kernel argument!");
     }
+    return *this;
   }
 
   inline cl_kernel id() const {
