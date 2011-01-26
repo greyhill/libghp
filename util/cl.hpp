@@ -651,7 +651,7 @@ public:
       std::size_t size,
       bool kernel_can_read = true,
       bool kernel_can_write = true,
-      bool mappable = true) {
+      bool mappable = false) {
     int err;
     id_ = clCreateBuffer(context.id(),
           ((kernel_can_read && kernel_can_write) ? CL_MEM_READ_WRITE : 0) |
@@ -671,7 +671,7 @@ public:
       std::size_t size,
       bool kernel_can_read = true,
       bool kernel_can_write = true,
-      bool mappable = true) {
+      bool mappable = false) {
     int err;
     id_ = clCreateBuffer(context.id(),
           ((kernel_can_read && kernel_can_write) ? CL_MEM_READ_WRITE : 0) |
@@ -692,7 +692,7 @@ public:
       const gl::vbo<TYPE> &vbo,
       bool kernel_can_read = true,
       bool kernel_can_write = true,
-      bool mappable = true) {
+      bool mappable = false) {
     int err;
     id_ = clCreateFromGLBuffer(context.id(),
           ((kernel_can_read && kernel_can_write) ? CL_MEM_READ_WRITE : 0) |
@@ -724,7 +724,7 @@ public:
       std::size_t height,
       bool kernel_can_read = true,
       bool kernel_can_write = true,
-      bool mappable = true) {
+      bool mappable = false) {
     int err;
     cl_image_format format = {
       pixelt2cl<PIXELT>::channel_order,
@@ -750,7 +750,7 @@ public:
       const ghp::texture<PIXELT> &texture,
       bool kernel_can_read = true,
       bool kernel_can_write = true,
-      bool mappable = true) {
+      bool mappable = false) {
     int err;
     cl_image_format format = {
         pixelt2cl<PIXELT>::channel_order,
@@ -779,7 +779,7 @@ public:
       std::size_t height,
       bool kernel_can_read = true,
       bool kernel_can_write = true,
-      bool mappable = true) {
+      bool mappable = false) {
     int err;
     cl_image_format format = {
         pixelt2cl<PIXELT>::channel_order,
@@ -806,7 +806,7 @@ public:
       const gl::texture<2, PIXELT> &gl_tex,
       bool kernel_can_read = true,
       bool kernel_can_write = true,
-      bool mappable = true) {
+      bool mappable = false) {
     int err;
     id_ = clCreateFromGLTexture2D(context.id(),
         ((kernel_can_read && kernel_can_write) ? CL_MEM_READ_WRITE : 0 ) |
@@ -840,7 +840,7 @@ public:
       std::size_t depth,
       bool kernel_can_read = true,
       bool kernel_can_write = true,
-      bool mappable = true) {
+      bool mappable = false) {
     int err;
     cl_image_format format = {
       pixelt2cl<PIXELT>::channel_order,
@@ -872,7 +872,7 @@ public:
       std::size_t depth,
       bool kernel_can_read = true,
       bool kernel_can_write = true,
-      bool mappable = true) {
+      bool mappable = false) {
     int err;
     cl_image_format format = {
         pixelt2cl<PIXELT>::channel_order,
